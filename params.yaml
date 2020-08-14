@@ -1,0 +1,8 @@
+beta: 0.1
+alpha: 0.1
+wave_length: 0.5e-6
+pixel_size: 0.5e-6
+NA: 0.1
+gamma: 0.9
+spotsize: 75
+
