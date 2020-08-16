@@ -37,26 +37,27 @@ if __name__ == "__main__":
     NA = 0.1
     cutoff_freq = NA * k
 
-    #coher_ft, coher_ctf = coherent_low_pass_filter(im_ft, pixel_size, \
-    #        cutoff_freq)
-    #incoher_ft, incoher_otf = incoherent_low_pass_filter(im_ft, pixel_size, \
-    #        cutoff_freq)
-
-    phi = wavefront_abber([(2,2,20)], w, h)
-    coher_aber_ft, coher_aber_ctf = coherent_low_pass_filter_abber(phi, im_ft,
-            pixel_size,
+    phi = wavefront_abber([(0,4,2)], 20, w)
+    incoher_ft, incoher_otf = incoherent_low_pass_filter_abber(phi, im_ft, \
+            pixel_size, \
+            cutoff_freq)
+    coher_aber_ft, coher_aber_ctf = coherent_low_pass_filter_abber(phi, im_ft, \
+            pixel_size, \
             cutoff_freq)
 
     fig = plt.figure(figsize=(4., 4.))
-    grid = ImageGrid(fig, 111,  # similar to subplot(111)
-                 nrows_ncols=(1,3),  # creates 2x2 grid of axes
-                 axes_pad=0.1,  # pad between axes in inch.
+    grid = ImageGrid(fig, 111,
+                 nrows_ncols=(3,2),
+                 axes_pad=0.1,
                 )
 
     for ax, img in zip(grid,
                 [
                 im_amp,
                 np.abs(ifft2(ifftshift(coher_aber_ft))),
+                np.abs(ifft2(ifftshift(incoher_ft))),
+                np.log(np.abs(coher_aber_ctf)),
+                np.log(np.abs(incoher_otf)),
                 phi
                 ]):
         # Iterating over the grid returns the Axes.
