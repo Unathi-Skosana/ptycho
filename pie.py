@@ -16,7 +16,7 @@ def diffract(probe,px,py,obj,**kwargs):
     px0 =  kwargs['px0']
     py0 = kwargs['py0']
     shift = kwargs['shift']
-    obj_diff = np.zeros((rows, cols, probe_size, probe_size),
+    obj_diff = np.zeros((rows * cols, probe_size, probe_size),
             dtype=np.complex64)
 
     for x in px:
@@ -25,20 +25,21 @@ def diffract(probe,px,py,obj,**kwargs):
             y_loc = np.int(np.round((y - py0) / shift))
             illu_obj = obj[y:y+probe_size, x:x+probe_size]
             obj_conv = illu_obj * probe
-            obj_diff[y_loc, x_loc]= np.abs(fftshift(fft2(obj_conv)))
+            obj_diff[x_loc * rows + y_loc]= np.abs(fftshift(fft2(obj_conv)))
     return obj_diff
-
 
 
 def pie(probe,px,py,obj_diff,**kwargs):
     alpha = kwargs['alpha']
     beta = kwargs['beta']
     iter = kwargs['iter']
+    rows = kwargs['rows']
     probe_size = kwargs['probe_size']
     px0 =  kwargs['px0']
     py0 = kwargs['py0']
     shift = kwargs['shift']
     obj = np.zeros((256,256), dtype=np.complex128)
+    probe_upd = np.copy(probe)
 
     for i in range(iter):
         for x in px:
@@ -48,12 +49,12 @@ def pie(probe,px,py,obj_diff,**kwargs):
                 illu_obj = obj[y:y+probe_size, x:x+probe_size]
                 g_osp = illu_obj * probe
                 g_fsp = fftshift(fft2(g_osp))
-                gp_fsp = obj_diff[y_loc,x_loc] * np.exp(1j*np.angle(g_fsp))
+                gp_fsp = obj_diff[x_loc*rows + y_loc] * np.exp(1j*np.angle(g_fsp))
                 gp_osp = ifft2(ifftshift(gp_fsp))
                 obj_upd = illu_obj + (gp_osp - g_osp) * alpha * np.conj(probe) / np.max(np.abs(probe))**2
                 obj[y:y+probe_size, x:x+probe_size] = obj_upd
-                #probe =  probe + (gp_osp - g_osp) * kwargs['beta'] * np.conj(illu_obj) / np.max(np.abs(illu_obj))**2
-    return obj, probe
+                probe_upd =  probe_upd + (gp_osp - g_osp) * beta * np.conj(illu_obj) / np.max(np.abs(illu_obj))**2
+    return obj, probe_upd
 
 
 if __name__ == "__main__":
@@ -90,8 +91,9 @@ if __name__ == "__main__":
 
     fig,ax = plt.subplots(1,4)
     ax[0].imshow(np.abs(a), cmap='gray')
-    ax[1].imshow(np.abs(obj), cmap='gray')
-    ax[2].imshow(np.angle(a), cmap='gray')
-    ax[3].imshow(np.angle(obj), cmap='gray')
+    ax[1].imshow(np.angle(a), cmap='gray')
+    ax[2].imshow(np.abs(b), cmap='gray')
+    ax[3].imshow(np.angle(b), cmap='gray')
+
     plt.show()
 
