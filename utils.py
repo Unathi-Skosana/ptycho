@@ -1,7 +1,5 @@
 import numpy as np
 from numpy import pi
-from scipy.fft import fft2, ifft2, fft, ifft, fftshift, ifftshift
-from skimage.transform import resize
 
 # --- formatting --- #
 flatten = lambda l: np.array([item for sl in l for item in sl])
@@ -23,8 +21,9 @@ def bmatrix(a):
 # --- abberations --- #
 from zernike import RZern
 from operator import itemgetter
+from skimage.transform import resize
 
-def wavefront_abber(coefficients, radius, width):
+def zern_modes(coefficients, radius, width):
     def pad_with(vector, pad_width, iaxis, kwargs):
         pad_value = kwargs.get('padder', 0)
         vector[:pad_width[0]] = pad_value
@@ -52,7 +51,9 @@ def wavefront_abber(coefficients, radius, width):
 
 
 # --- filters --- #
-def coherent_low_pass_filter(im_ft,pixel_size,cutoff_freq):
+from scipy.fft import fft2, ifft2, fft, ifft, fftshift, ifftshift
+
+def c_lpf(im_ft,pixel_size,cutoff_freq):
     m,n = im_ft.shape
     kx = np.arange(-pi/pixel_size, pi/pixel_size, 2*pi / pixel_size / n)
     ky = np.arange(-pi/pixel_size, pi/pixel_size, 2*pi / pixel_size / m)
@@ -64,8 +65,8 @@ def coherent_low_pass_filter(im_ft,pixel_size,cutoff_freq):
 
     return out_ft,ctf.astype(np.uint)
 
-def incoherent_low_pass_filter(im_ft,pixel_size,cutoff_freq):
-    _,ctf = coherent_low_pass_filter(im_ft, pixel_size, cutoff_freq)
+def inc_lpf(im_ft,pixel_size,cutoff_freq):
+    _,ctf = c_lpf(im_ft, pixel_size, cutoff_freq)
     cpsf = fftshift(ifft2(ifftshift(ctf)))
     ipsf = np.abs(cpsf)**2
     otf  = np.abs(fftshift(fft2(ifftshift(ipsf))))
@@ -74,16 +75,15 @@ def incoherent_low_pass_filter(im_ft,pixel_size,cutoff_freq):
 
     return out_ft,otf
 
-
-def coherent_low_pass_filter_abber(phi,im_ft,pixel_size,cutoff_freq):
-    _, ctf = coherent_low_pass_filter(im_ft,pixel_size,cutoff_freq)
+def c_abber(phi,im_ft,pixel_size,cutoff_freq):
+    _, ctf = c_lpf(im_ft,pixel_size,cutoff_freq)
     aber_ctf = np.multiply(np.exp(1j * phi), ctf)
-    aber_ft = np.multiply(im_ft,aber_ctf)
+    aber_ft = np.multiply(im_ft, aber_ctf)
 
     return aber_ft, aber_ctf
 
-def incoherent_low_pass_filter_abber(phi,im_ft,pixel_size,cutoff_freq):
-    _,aber_ctf = coherent_low_pass_filter_abber(phi,im_ft,pixel_size,cutoff_freq)
+def inc_abber(phi,im_ft,pixel_size,cutoff_freq):
+    _,aber_ctf = c_abber(phi,im_ft,pixel_size,cutoff_freq)
     cpsf = fftshift(ifft2(ifftshift(aber_ctf)))
     ipsf = np.abs(cpsf)**2
     otf  = np.abs(fftshift(fft2(ifftshift(ipsf))))
@@ -91,3 +91,33 @@ def incoherent_low_pass_filter_abber(phi,im_ft,pixel_size,cutoff_freq):
     out_ft = np.multiply(im_ft, otf)
 
     return out_ft,otf
+
+# --- misc --- #
+from scipy import signal
+# https://gist.github.com/thomasaarholt/267ec4fff40ca9dff1106490ea3b75670
+
+def gau_kern(n, std, normalized=False):
+    '''
+    Generates a n x n matrix with a centered gaussian
+    of standard deviation std centered on it. If normalized,
+    its volume equals 1.
+    '''
+
+    gaussian1D = signal.gaussian(n, std)
+    gaussian2D = np.outer(gaussian1D, gaussian1D)
+    if normalized:
+        gaussian2D /= (2*np.pi*(std**2))
+    return gaussian2D
+
+
+def circ_mask(c, r, w, v=0):
+    '''
+    Generate circular mask centered at c with radius r
+    '''
+
+    cx, cy = c
+    y,x = np.ogrid[-cx:w-cx, -cy:w-cy]
+    mask = x*x + y*y <= r*r
+    arr = np.zeros((w,w))
+    arr[mask] = v
+    return arr

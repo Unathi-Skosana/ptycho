@@ -1,8 +1,13 @@
-beta: 0.1
-alpha: 0.1
+alpha: 1.0
+beta: 0.90
+gamma: 0.9
+NA: 0.1
 wave_length: 0.5e-6
 pixel_size: 0.5e-6
-NA: 0.1
-gamma: 0.9
-spotsize: 75
-
+probe_size: 80
+rows: 7
+cols: 7
+px0: 10
+py0: 10
+shift: 24
+iter: 20
