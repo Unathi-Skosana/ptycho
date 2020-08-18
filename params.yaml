@@ -1,6 +1,5 @@
 alpha: 1.0
-beta: 0.90
-gamma: 0.9
+beta: 1.0
 NA: 0.1
 wave_length: 0.5e-6
 pixel_size: 0.5e-6
