@@ -9,4 +9,4 @@ cols: 7
 px0: 10
 py0: 10
 shift: 24
-iter: 20
+iter: 100

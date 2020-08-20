@@ -11,10 +11,10 @@ from skimage.io import imread
 from skimage.transform import resize
 from numpy import pi
 from scipy.fft import fft2, ifft2, fft, ifft, fftshift, ifftshift
-from utils import coherent_low_pass_filter, \
-    incoherent_low_pass_filter, wavefront_abber, \
-    coherent_low_pass_filter_abber, incoherent_low_pass_filter_abber, \
-    gaussian_kernel
+from utils import c_lpf, \
+    inc_lpf, zern_modes, \
+    c_abber, inc_abber, \
+    gau_kern
 
 # TeX typesetting
 from matplotlib import rc
@@ -40,27 +40,29 @@ if __name__ == "__main__":
     NA = 0.1
     cutoff_freq = NA * k
 
-    phi = wavefront_abber([(0,4,2)], 20, w)
-    incoher_ft, incoher_otf = incoherent_low_pass_filter_abber(phi, im_ft, \
+    phi = zern_modes([(0,4,2)], 20, w)
+    incoher_ft, incoher_otf = inc_abber(phi, im_ft, \
             pixel_size, \
             cutoff_freq)
-    coher_aber_ft, coher_aber_ctf = coherent_low_pass_filter_abber(phi, im_ft, \
+    coher_aber_ft, coher_aber_ctf = c_abber(phi, im_ft, \
             pixel_size, \
             cutoff_freq)
 
     fig = plt.figure(figsize=(4., 4.))
     grid = ImageGrid(fig, 111,
-                 nrows_ncols=(1,1),
+                 nrows_ncols=(1,3),
                  axes_pad=0.1,
                 )
 
-
-    flat_top = gaussian_kernel(75, 75/2.355, normalized=True)
-
     for ax, img in zip(grid,
                 [
-                flat_top
+                im_amp,
+                np.abs(ifft2(ifftshift(coher_aber_ft))),
+                np.abs(ifft2(ifftshift(incoher_ft))),
                 ]):
-        # Iterating over the grid returns the Axes.
-        ax.imshow(img, cmap='RdBu_r')
+        ax.imshow(img, cmap='gray')
+
+    fig1, ax1 = plt.subplots()
+    ax1.imshow(phi, cmap='gray')
+
     plt.show()
