@@ -3,9 +3,9 @@ import sys
 
 from itertools import product
 from skimage import img_as_float
-from skimage.io import imread
+from skimage.io import imread, imsave
 from skimage.transform import resize
-from utils import gau_kern
+from utils import gau_kern, pad_with
 from scipy.fft import fft2, ifft2, fft, ifft, fftshift, ifftshift
 
 def diffract(P,R,O,**kwargs):
@@ -113,6 +113,7 @@ if __name__ == "__main__":
     amp = im1
     phase = im2
     O = amp * np.exp(1j * phase)
+    h,w = O.shape
 
     iter = params['iter']
     probe_size = params['probe_size']
@@ -131,17 +132,26 @@ if __name__ == "__main__":
 
     n = 5
     O_dif = diffract(P, R, O, **params)
+    O_dif_padded = np.array(list(map(lambda x : np.pad(x, (h - probe_size)//2, pad_with,
+        padder=0), O_dif)))
     O_est, Eo, P_est, sse = pie(P, R, O, O_dif, n=n, permute=True, **params)
 
-    fig0,ax0 = plt.subplots(1,2)
+    fig0,ax0 = plt.subplots(1,3)
     ax0[0].imshow(np.abs(O_est), cmap='gray')
     ax0[1].imshow(np.angle(O_est), cmap='gray')
-
+    ax0[2].imshow(np.abs(O_dif_padded[30]), cmap='RdBu_r')
 
     fig1, ax1 = plt.subplots()
-    ax1.plot(range(0, iter, iter // n), Eo, marker='o')
-    ax1.set_title("RMS error")
-    ax1.set_xlabel('iterations')
+    ax1.plot(range(0, iter, iter // n), Eo, '--o', alpha=0.5)
+    ax1.set_title('RMS error')
+    ax1.set_xlabel('Iterations')
     ax1.set_ylabel(r'$E_o$')
+
+    fig2, ax2 = plt.subplots()
+    ax2.plot(sse[0:60] , '--o', alpha=0.5)
+    ax2.set_title('Error Sum of Squares')
+    ax2.set_xlabel('Iterations')
+    ax2.set_ylabel('SSE')
+
 
     plt.show()
