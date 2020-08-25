@@ -23,6 +23,13 @@ from zernike import RZern
 from operator import itemgetter
 from skimage.transform import resize
 
+
+def crop_center(img, cropx, cropy):
+    y, x = img.shape
+    startx = x // 2 - (cropx // 2)
+    starty = y // 2 - (cropy // 2)
+    return img[starty:starty + cropy, startx:startx + cropx]
+
 def pad_with(vector, pad_width, iaxis, kwargs):
     pad_value = kwargs.get('padder', 0)
     vector[:pad_width[0]] = pad_value
@@ -50,9 +57,12 @@ def zern_modes(coefficients, radius, width):
         if m <= 0 and n % 4 == 0 or n % 4 == 1:
             j += 1
         c[j-1] = v
-    phi = np.nan_to_num(cart.eval_grid(c, matrix=True), nan=0.0)
-    phi = np.pad(phi,width//2 - radius//2,pad_with,padder=0)
-    return resize(phi, (width, width), anti_aliasing=True)
+    phi = np.nan_to_num(cart.eval_grid(c, matrix=True), nan=0)
+
+    if width != radius:
+        phi = np.pad(phi,width//2 - radius//2,pad_with,padder=0)
+
+    return resize(phi, (width, width), anti_aliasing=False)
 
 
 # --- filters --- #

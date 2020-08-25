@@ -40,7 +40,7 @@ if __name__ == "__main__":
     NA = 0.1
     cutoff_freq = NA * k
 
-    phi = zern_modes([(0,4,2)], 20, w)
+    phi = zern_modes([(-2,6,4)], 20, w)
     incoher_ft, incoher_otf = inc_abber(phi, im_ft, \
             pixel_size, \
             cutoff_freq)
