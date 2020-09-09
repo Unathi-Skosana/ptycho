@@ -3,10 +3,10 @@ beta: 1.0
 NA: 0.1
 wave_length: 0.5e-6
 pixel_size: 0.5e-6
-probe_size: 80
+probe_size: 75
 rows: 7
 cols: 7
 px0: 10
 py0: 10
 shift: 24
-iter: 500
+iter: 200
