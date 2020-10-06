@@ -8,7 +8,7 @@ if __name__ == "__main__":
     matplotlib.font_manager.findSystemFonts(fontpaths=None, fontext='ttf')
 
     # Aesthetics
-    rc('text', usetex=True)
+    plt.rcParams['text.usetex'] = True
     plt.style.use('seaborn-white')
 
     plt.rcParams['font.family'] = 'sans-serif'
@@ -31,13 +31,14 @@ if __name__ == "__main__":
     ax = plt.subplot(111)
 
     for v in [0.4, 0.7, 1.0]:
-        a = np.loadtxt('./convergence/beta={}_sse.dat'.format(v), delimiter=" ")
-        x, y = np.split(a,[-1],axis=1)
-        ax.plot(x, y, alpha=0.5, lw=1)
+        a = np.loadtxt('./convergence_checkboard/beta={}_Eo.dat'.format(v),
+                delimiter=",")
+        x1, y1 = np.split(a,[-1],axis=1)
+        ax.plot(x1, y1, alpha=0.5, lw=1)
         ax.set_title(r'Sum of squares error for ePIE')
         ax.set_xlabel('Iterations')
         ax.set_ylabel('Error')
-    ax.legend(list(map(lambda x : r'$\beta={}$'.format(x), [0.4, 0.7, 1.0])))
+    ax.legend(list(map(lambda x : r'$\alpha={}$'.format(x), [0.4, 0.7, 1.0])))
 
     plt.show()
 

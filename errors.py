@@ -6,6 +6,15 @@ from joblib import Parallel, delayed
 from utils import gau_kern, pad_with, zern_modes, circ_mask, crop_center
 from scipy.fft import fft2, ifft2, fft, ifft, fftshift, ifftshift
 from numpy import pi
+from itertools import chain
+
+def pertube_diff(d,v):
+    def f(a):
+        c = list(map(lambda I : I + np.random.uniform(low=-v/100 * I, high=v/100 * I), a))
+        return np.array(c)
+
+    b = np.fromiter(chain.from_iterable(f(i) for i in d), dtype=d.dtype)
+    return np.reshape(b, d.shape)
 
 def diffract(P,R,O,**kwargs):
     probe_size = kwargs['probe_size']
@@ -16,15 +25,16 @@ def diffract(P,R,O,**kwargs):
     shift = kwargs['shift']
 
     O_dif = np.zeros((rows * cols, probe_size, probe_size),
-            dtype=np.complex64)
+            dtype=np.float64)
 
     def d(k):
         x, y = R[k]
-        x_loc = np.int(np.round((x - px0) / shift))
-        y_loc = np.int(np.round((y - py0) / shift))
+        x_loc = np.int(np.round((x  - px0) / shift))
+        y_loc = np.int(np.round((y  - py0) / shift))
         O_illu = O[y:y+probe_size, x:x+probe_size]
         O_conv = O_illu * P
-        O_dif[x_loc * rows + y_loc]= np.abs(fftshift(fft2(O_conv)))
+        diff = np.abs(fftshift(fft2(O_conv)))
+        O_dif[x_loc * rows + y_loc] = diff
 
     Parallel(n_jobs=8, prefer="threads")(delayed(d)(k) for k in range(rows*cols))
     return O_dif
@@ -64,13 +74,27 @@ def epie(R,O,O_dif,n=10,permute=False,**kwargs):
 
         for u in idx:
             x, y = R[u]
-            i = np.int(np.round((x - px0) / shift))
-            j = np.int(np.round((y - py0) / shift))
+
             O_illu = O_est[y:y+probe_size, x:x+probe_size]
             O_illu_copy = np.copy(O_illu)
             O_g = O_illu * P_est
             O_gdif = fftshift(fft2(O_g))
+
+            if u == 4 or u == 8 or u == 12 or u == 16 or u == 20:
+                x += np.random.randint(low=-2, high=2)
+                y += np.random.randint(low=-2, high=2)
+
+            i = np.int(np.round((x - px0) / shift))
+            j = np.int(np.round((y - py0) / shift))
+
             O_cdif = O_dif[i * rows + j] * np.exp(1j * np.angle(O_gdif))
+            
+            #O_cdif = pertube_diff(O_dif[i*rows + j] / O_dif[i*rows + j].max(),
+            #    5) * np.exp(1j * np.angle(O_gdif))
+
+            #O_cdif = np.random.poisson(10e9 * O_dif[i * rows + j] / O_dif[i*rows
+            #    + j].max()) / 10e9 * np.exp(1j * np.angle(O_gdif))
+
             O_c = ifft2(ifftshift(O_cdif))
             O_est[y:y+probe_size, x:x+probe_size] = O_illu + (O_c - O_g) * alpha * \
                     np.conj(P_est) / np.max(np.abs(P_est))**2
@@ -82,8 +106,8 @@ def epie(R,O,O_dif,n=10,permute=False,**kwargs):
             if i * rows + j == rows * cols // 2: # arbitrary
                 _O_gdif = O_gdif
 
-        e = np.abs(O_dif[rows * cols // 2])**2 - np.abs(_O_gdif)**2
-        sse[k] = np.sum(np.sum(e**2 / pixels))
+        e = (np.abs(O_dif[rows * cols // 2])**2 - np.abs(_O_gdif)**2)**2
+        sse[k] = np.abs(np.sum(np.sum(e / pixels)))
 
         if k % m == 0:
             O_n[o] = O_est
@@ -106,7 +130,7 @@ if __name__ == "__main__":
     from matplotlib import rc
     from skimage.restoration import unwrap_phase
     from skimage.io import imread, imsave
-    from skimage import img_as_float
+    from skimage import img_as_float, img_as_float64
     from itertools import product
 
     # Aesthetics
@@ -145,29 +169,26 @@ if __name__ == "__main__":
     gau_mask = gau_mask > 0.5
     gau_mask = gau_mask.astype(np.int)
 
-    pphase = crop_center(np.abs(gau_mask*phi), probe_size, probe_size)
+    pphase = crop_center(np.abs(gau_mask*phi), probe_size,
+        probe_size)
     pamp = crop_center(gau_mask, probe_size, probe_size)
+
+    pamp =  pamp / pamp.max()
+    pphase = pphase / pphase.max()
+
     P = pamp * np.exp(1j * pphase)
 
-    n = 100
+    n = 10
     O_dif = diffract(P, R, O, **params)
     O_dif_padded = np.array(list(map(lambda x : np.pad(x, (h - probe_size)//2, pad_with,
         padder=0), O_dif)))
     O_est, P_est, Eo, sse = epie(R, O, O_dif, n=n, permute=True, **params)
 
     x_sse = range(0, iter)
-    y_sse =  sse / np.max(sse)
+    y_sse =  sse
 
     x_Eo = range(0, iter, iter // n)
-    y_Eo = Eo / np.max(Eo)
-
-
-    ''
-    np.savetxt('beta={}_Eo.dat'.format(params['beta']), np.c_[x_Eo,y_Eo],
-            fmt='%d, %f')
-    np.savetxt('beta={}_sse.dat'.format(params['beta']), np.c_[x_sse,y_sse],
-            fmt='%d, %f')
-    ''
+    y_Eo = Eo
 
     fig, ax = plt.subplots(3,2)
 
@@ -178,13 +199,12 @@ if __name__ == "__main__":
 
     ax[1][0].imshow(np.abs(P_est), cmap='gray')
     ax[1][0].set_title('Estimated Probe\'s amplitude')
-    ax[1][1].imshow(np.abs(P_est) * unwrap_phase(np.angle(P_est)), cmap='RdBu_r', vmin=-pi,
-            vmax=pi)
+    ax[1][1].imshow(np.abs(P_est) * np.angle(P_est), cmap='gray')
     ax[1][1].set_title('Estimated Probe\'s phase')
 
     ax[2][0].imshow(np.abs(P), cmap='gray')
     ax[2][0].set_title('Actual Probe\'s amplitude')
-    ax[2][1].imshow(np.angle(P), cmap='RdBu_r')
+    ax[2][1].imshow(np.angle(P), cmap='gray')
     ax[2][1].set_title('Actual Probe\'s phase')
 
     figg, axx = plt.subplots(1, 2)

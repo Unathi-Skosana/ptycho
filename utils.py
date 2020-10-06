@@ -24,6 +24,33 @@ from operator import itemgetter
 from skimage.transform import resize
 
 
+def stripes(gap,stripe_width,image_size):
+    canvas = np.full((image_size, image_size), 0.5, dtype=np.float64)
+    current_col = 0
+    while current_col < image_size:
+        if current_col + stripe_width + gap <= image_size-1:
+            canvas[:, current_col:current_col+stripe_width] = 1.0
+            current_col += stripe_width + gap
+        elif current_col + stripe_width <= image_size-1:
+            canvas[:, current_col:current_col+stripe_width] = 1.0
+            current_col = image_size
+        else:
+            canvas[:, current_col:] = 1
+            current_col = image_size
+    return canvas
+
+def checkerboard(N,n):
+    """
+        N: size of board; n=size of each square; N/(2*n) must be an integer
+        from https://stackoverflow.com/questions/32704485/drawing-a-checkerboard-in-python
+    """
+    if (N%(2*n)):
+        print('Error: N/(2*n) must be an integer')
+        return False
+    a = np.concatenate((np.zeros(n),np.ones(n)))
+    b = np.pad(a,int((N**2)/2-n),'wrap').reshape((N,N))
+    return (b+b.T==1).astype(int)
+
 def crop_center(img, cropx, cropy):
     y, x = img.shape
     startx = x // 2 - (cropx // 2)
