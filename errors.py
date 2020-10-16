@@ -80,20 +80,20 @@ def epie(R,O,O_dif,n=10,permute=False,**kwargs):
             O_g = O_illu * P_est
             O_gdif = fftshift(fft2(O_g))
 
-            if u == 4 or u == 8 or u == 12 or u == 16 or u == 20:
-                x += np.random.randint(low=-2, high=2)
-                y += np.random.randint(low=-2, high=2)
+            #if u == 0 or u == 4 or u == 81 or u == 101:
+            #    x += np.random.randint(low=-2, high=2)
+            #    y += np.random.randint(low=-2, high=2)
 
             i = np.int(np.round((x - px0) / shift))
             j = np.int(np.round((y - py0) / shift))
 
-            O_cdif = O_dif[i * rows + j] * np.exp(1j * np.angle(O_gdif))
+            #O_cdif = O_dif[i * rows + j] * np.exp(1j * np.angle(O_gdif))
             
             #O_cdif = pertube_diff(O_dif[i*rows + j] / O_dif[i*rows + j].max(),
-            #    5) * np.exp(1j * np.angle(O_gdif))
+            #    50) * np.exp(1j * np.angle(O_gdif))
 
-            #O_cdif = np.random.poisson(10e9 * O_dif[i * rows + j] / O_dif[i*rows
-            #    + j].max()) / 10e9 * np.exp(1j * np.angle(O_gdif))
+            O_cdif = np.random.poisson(6.24 * 10e9 * O_dif[i * rows + j] / O_dif[i*rows
+                +j].max()) / (6.24 * 10e9) * np.exp(1j * np.angle(O_gdif))
 
             O_c = ifft2(ifftshift(O_cdif))
             O_est[y:y+probe_size, x:x+probe_size] = O_illu + (O_c - O_g) * alpha * \
@@ -134,9 +134,7 @@ if __name__ == "__main__":
     from itertools import product
 
     # Aesthetics
-    plt.style.use('seaborn-notebook')
-    rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
-    rc('text', usetex=True)
+    plt.style.use('tint')
 
     fn = sys.argv[1]
     im1_fn = sys.argv[2]
@@ -207,17 +205,12 @@ if __name__ == "__main__":
     ax[2][1].imshow(np.angle(P), cmap='gray')
     ax[2][1].set_title('Actual Probe\'s phase')
 
-    figg, axx = plt.subplots(1, 2)
+    figg, axx = plt.subplots()
 
-    axx[0].plot(x_sse, y_sse, alpha=0.5, lw=1)
-    axx[0].set_title(r'Sum of squares error for ePIE')
-    axx[0].set_xlabel('Iterations')
-    axx[0].set_ylabel('Error')
-
-    axx[1].plot(x_Eo, y_Eo, alpha=0.5, lw=1)
-    axx[1].set_title(r'RMS Error for ePIE')
-    axx[1].set_xlabel('Iterations')
-    axx[1].set_ylabel('En')
+    axx.plot(x_Eo, y_Eo, alpha=0.5, lw=1)
+    axx.set_title(r'RMS Error for ePIE')
+    axx.set_xlabel('Iterations')
+    axx.set_ylabel('En')
 
     plt.show()
 

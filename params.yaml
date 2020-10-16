@@ -1,9 +1,9 @@
 alpha: 1.0
 beta: 1.0
-probe_size: 80
-rows: 8
-cols: 8
-px0: 10
-py0: 10
-shift: 20
-iter: 100
+probe: 50
+shift: 15
+px: 10
+py: 10
+N: 200
+r: 14
+c: 14

@@ -24,18 +24,43 @@ from operator import itemgetter
 from skimage.transform import resize
 
 
-def stripes(gap,stripe_width,image_size):
+# https://note.nkmk.me/en/python-numpy-generate-gradation-image/
+def get_gradation_2d(start, stop, width, height, is_horizontal):
+    if is_horizontal:
+        return np.tile(np.linspace(start, stop, width), (height, 1))
+    else:
+        return np.tile(np.linspace(start, stop, height), (width, 1)).T
+
+
+def get_gradation_3d(width, height, start_list, stop_list, is_horizontal_list):
+    result = np.zeros((height, width, len(start_list)), dtype=np.float)
+
+    for i, (start, stop, is_horizontal) in enumerate(zip(start_list, stop_list, is_horizontal_list)):
+        result[:, :, i] = get_gradation_2d(start, stop, width, height, is_horizontal)
+
+    return result
+
+def stripes(gap,stripe_width,image_size, horizontal=True):
     canvas = np.full((image_size, image_size), 0.5, dtype=np.float64)
     current_col = 0
     while current_col < image_size:
         if current_col + stripe_width + gap <= image_size-1:
-            canvas[:, current_col:current_col+stripe_width] = 1.0
+            if horizontal:
+                canvas[current_col:current_col+stripe_width, :] = 1.0
+            else:
+                canvas[:, current_col:current_col+stripe_width] = 1.0
             current_col += stripe_width + gap
         elif current_col + stripe_width <= image_size-1:
-            canvas[:, current_col:current_col+stripe_width] = 1.0
+            if horizontal:
+                canvas[current_col:current_col+stripe_width, :] = 1.0
+            else:
+                canvas[:, current_col:current_col+stripe_width] = 1.0
             current_col = image_size
         else:
-            canvas[:, current_col:] = 1
+            if horizontal:
+                canvas[current_col:, :] = 1
+            else:
+                canvas[:, current_col:] = 1
             current_col = image_size
     return canvas
 
