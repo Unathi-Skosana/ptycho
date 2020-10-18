@@ -10,10 +10,11 @@ import numpy as np
 
 from joblib import Parallel, delayed
 from scipy.fft import fft2, ifft2, fftshift, ifftshift
+from itertools import chain
 from utils.filters import gau_kern
 
 
-def diffract(obj, illu_func, illu_pos, **kwargs):
+def diffract(obj, illu_func, illu_pos, mode='ideal', **kwargs):
     """
     Computes diffraction patterns of the object O ( phase & amplitude )
     probed by a probe P (phase & amplitude) across predetermined illuminations
@@ -42,14 +43,39 @@ def diffract(obj, illu_func, illu_pos, **kwargs):
     # Routine for parallelization, no need to worry about racing conditions as
     # the diffraction patterns are computed independently of one another
     def diff(k):
+        dx_k, dy_k = 0, 0
+        if mode =='position' and k % 6  == 0:
+            dx_k = np.random.randint(low=-4, high=4)
+            dy_k = np.random.randint(low=-4, high=4)
+
         x_k, y_k = illu_pos[k]
         i, j = np.int(np.round((x_k - p_x) / shift)), \
             np.int(np.round((y_k - p_y) / shift))
-        ext_wave = obj[y_k:y_k+probe, x_k:x_k+probe] * illu_func
-        diff_patterns[i * rows + j] = np.abs(fftshift(fft2(ext_wave)))
+
+        ext_wave = obj[y_k + dy_k:y_k + dy_k + probe, x_k + dx_k:x_k + dx_k + probe] * illu_func
+        ext_diff = np.abs(fftshift(fft2(ext_wave)))
+
+        if mode == 'poisson':
+            mu = 10e6
+            vals = len(np.unique(ext_diff))
+            vals = 2 ** np.ceil(np.log2(vals))
+            ext_diff = np.random.poisson(vals  / mu * ext_diff) \
+                    / float(vals / mu)
+        if mode == 'random':
+            v = 50
+            def f(a):
+                c = list(map(lambda I : I + np.random.uniform(low=-v/100 * I, high=v/100 * I), a))
+                return np.array(c)
+
+            b = np.fromiter(chain.from_iterable(f(i) for i in ext_diff),
+                    dtype=ext_diff.dtype)
+
+            ext_diff = np.reshape(b, ext_diff.shape)
+
+        diff_patterns[i * rows + j] = ext_diff
 
     # Parallel diffraction pattern calculation
-    Parallel(n_jobs=4, prefer="threads")(
+    Parallel(n_jobs=8, prefer="threads")(
         delayed(diff)(k) for k in range(pixels))
 
     return diff_patterns

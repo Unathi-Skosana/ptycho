@@ -41,7 +41,7 @@ if __name__ == "__main__":
     y = np.arange(p_y, p_y + cols * shift, shift)
     R = np.array(list(product(x, y)))
 
-    phi = zernike_poly([(-1, 1, 10)], probe, width)
+    phi = zernike_poly([(0, 0, 2)], probe, width)
 
     gau_mask = gau_kern(width, probe / 2.35482,
                         normalize=False)
@@ -55,7 +55,9 @@ if __name__ == "__main__":
     illu_func = illu_func_pamp * np.exp(1j * illu_func_phase)
 
     rms_n = 100
-    diff_patterns = diffract(obj, illu_func, R, **params)
+    diff_patterns = diffract(obj, illu_func,
+                             R, mode='position',
+                             **params)
     obj_est, illu_func_est, rms, sse = epie(obj, R,
                                             diff_patterns,
                                             hold=10,
