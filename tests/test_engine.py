@@ -1,15 +1,18 @@
-if __name__ == "__main__": 
+if __name__ == "__main__":
     import yaml
     import matplotlib.pyplot as plt
     import numpy as np
     import sys
 
     from skimage.restoration import unwrap_phase
-    from skimage.io import imread, imsave
+    from skimage.io import imread
     from skimage import img_as_float
     from itertools import product
-    from utils import gau_kern, zern_modes, crop_center
-    from epie import diffract, simulate
+
+    from utils.filters import gau_kern
+    from utils.formatting import crop_center
+    from utils.aberrations import zernike_poly
+    from engine.simulator import diffract, epie
 
     plt.style.use('mint')
 
@@ -20,27 +23,28 @@ if __name__ == "__main__":
     amp = img_as_float(imread(im1_fn, as_gray=True))
     phase = img_as_float(imread(im2_fn, as_gray=True))
 
+    height, width = phase.shape
+
     params = None
     with open(fn) as f:
         params = yaml.load(f, Loader=yaml.FullLoader)
 
-    N = params['N']
+    iterations = params['iterations']
     probe = params['probe']
-    r, c = params['r'], params['c']
+    rows, cols = params['rows'], params['cols']
     shift = params['shift']
-    px, py = params['px'], params['py']
+    p_x, p_y = params['p_x'], params['p_y']
 
     obj = amp * np.exp(1j * phase)
-    h, w = obj.shape
 
-    x = np.arange(px, px + r * shift, shift)
-    y = np.arange(py, py + c * shift, shift)
+    x = np.arange(p_x, p_x + rows * shift, shift)
+    y = np.arange(p_y, p_y + cols * shift, shift)
     R = np.array(list(product(x, y)))
 
-    phi = zern_modes([(-1, 1, 10)], probe, w)
+    phi = zernike_poly([(-1, 1, 10)], probe, width)
 
-    gau_mask = gau_kern(w, probe / 2.35482,
-                        normalized=False)
+    gau_mask = gau_kern(width, probe / 2.35482,
+                        normalize=False)
     gau_mask = gau_mask > 0.5
     gau_mask = gau_mask.astype(np.int)
 
@@ -50,18 +54,18 @@ if __name__ == "__main__":
     illu_func_phase = illu_func_phase / illu_func_phase.max()
     illu_func = illu_func_pamp * np.exp(1j * illu_func_phase)
 
-    n = 100
+    rms_n = 100
     diff_patterns = diffract(obj, illu_func, R, **params)
-    obj_est, illu_func_est, rms, sse = simulate(obj, R,
-                                                diff_patterns,
-                                                hold=10,
-                                                rms_n=n,
-                                                permute=True,
-                                                **params)
+    obj_est, illu_func_est, rms, sse = epie(obj, R,
+                                            diff_patterns,
+                                            hold=10,
+                                            rms_n=rms_n,
+                                            permute=True,
+                                            **params)
 
-    x_sse = range(0, N)
+    x_sse = range(0, iterations)
     y_sse = sse
-    x_Eo = range(0, N, N // n)
+    x_Eo = range(0, iterations, iterations // rms_n)
     y_Eo = rms
 
     fig, ax = plt.subplots(3, 2)
@@ -83,9 +87,9 @@ if __name__ == "__main__":
 
     figg, axx = plt.subplots()
 
-    axx.plot(x_Eo, y_Eo, alpha=0.5, lw=1)
+    axx.plot(x_Eo, y_Eo, lw=1)
     axx.set_title(r'RMS Error for PIE')
     axx.set_xlabel('Iterations')
-    axx.set_ylabel('E_n')
+    axx.set_ylabel('En')
 
     plt.show()

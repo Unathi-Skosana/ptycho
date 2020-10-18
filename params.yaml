@@ -2,8 +2,8 @@ alpha: 1.0
 beta: 1.0
 probe: 50
 shift: 15
-px: 10
-py: 10
-N: 200
-r: 14
-c: 14
+p_x: 5
+p_y: 5
+rows: 14
+cols: 14
+iterations: 200

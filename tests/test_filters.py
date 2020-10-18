@@ -1,35 +1,27 @@
-import os
 import sys
-import matplotlib
 import numpy as np
-import numpy.linalg as la
+import matplotlib
 import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1 import ImageGrid
 
-from skimage import io,img_as_float
+from mpl_toolkits.axes_grid1 import ImageGrid
+from skimage import img_as_float
 from skimage.io import imread
 from skimage.transform import resize
 from numpy import pi
 from scipy.fft import fft2, ifft2, fft, ifft, fftshift, ifftshift
-from utils import c_lpf, \
-    inc_lpf, zern_modes, \
-    c_abber, inc_abber, \
-    gau_kern
 
-# TeX typesetting
-from matplotlib import rc
-rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
-rc('text', usetex=True)
+from utils.filters import gau_kern
+from utils.aberrations import c_lpf, \
+    inc_lpf, zernike_poly, \
+    c_abber, inc_abber
 
-# Aesthetics
-plt.close('all')
-plt.style.use('seaborn-pastel')
+plt.style.use('mint')
 
 if __name__ == "__main__":
     im_path = sys.argv[1]
     im = img_as_float(imread(im_path, as_gray=True))
     im = resize(im, (256, 256), anti_aliasing=True)
-    im_amp =  np.sqrt(im)
+    im_amp = np.sqrt(im)
     im_ft = fftshift(fft2(im_amp))
     h,w = im_ft.shape
 
@@ -40,11 +32,13 @@ if __name__ == "__main__":
     NA = 0.1
     cutoff_freq = NA * k
 
-    phi = zern_modes([(-2,6,4)], 20, w)
-    incoher_ft, incoher_otf = inc_abber(phi, im_ft, \
+    phi = zernike_poly([(-2,6,4)], 20, w)
+    incoher_ft, incoher_otf = inc_abber(im_ft, \
+            phi,
             pixel_size, \
             cutoff_freq)
-    coher_aber_ft, coher_aber_ctf = c_abber(phi, im_ft, \
+    coher_aber_ft, coher_aber_ctf = c_abber(im_ft, \
+            phi,
             pixel_size, \
             cutoff_freq)
 
