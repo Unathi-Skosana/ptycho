@@ -12,7 +12,7 @@ from scipy.fft import fft2, ifft2, fft, ifft, fftshift, ifftshift
 
 from utils.filters import gau_kern
 from utils.aberrations import c_lpf, \
-    inc_lpf, zernike_poly, \
+    inc_lpf, zernike_modes, \
     c_abber, inc_abber
 
 plt.style.use('mint')
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     NA = 0.1
     cutoff_freq = NA * k
 
-    phi = zernike_poly([(-2,6,4)], 20, w)
+    phi = zernike_modes([(-2,6,4)], 20, w)
     incoher_ft, incoher_otf = inc_abber(im_ft, \
             phi,
             pixel_size, \

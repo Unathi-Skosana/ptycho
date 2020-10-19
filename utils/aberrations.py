@@ -17,7 +17,7 @@ import numpy as np
 from .formatting import pad_with
 
 
-def zernike_poly(vals, radius, width):
+def zernike_modes(vals, radius, width):
     """
     Generates a w x w matrix of a linear combination of zernike
     polynomials from specified indices and coefficients

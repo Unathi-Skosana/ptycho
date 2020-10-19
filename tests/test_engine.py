@@ -11,7 +11,7 @@ if __name__ == "__main__":
 
     from utils.filters import gau_kern
     from utils.formatting import crop_center
-    from utils.aberrations import zernike_poly
+    from utils.aberrations import zernike_modes
     from engine.simulator import diffract, epie
 
     plt.style.use('mint')
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     y = np.arange(p_y, p_y + cols * shift, shift)
     R = np.array(list(product(x, y)))
 
-    phi = zernike_poly([(0, 0, 2)], probe, width)
+    phi = zernike_modes([(0, 0, 2)], probe, width)
 
     gau_mask = gau_kern(width, probe / 2.35482,
                         normalize=False)
