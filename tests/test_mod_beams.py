@@ -6,25 +6,23 @@ Github: https://github.com/Unathi Skosana
 Description: 
 """
 
-
-import numpy as np
-import matplotlib.pyplot as plt
-
-from beams.GaussianLaguerreBeams import ModifiedGaussLaguerreModeSet as modGLM
-from common.constants import c, pi, j
-
-
 if __name__ == '__main__':
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    from beams.GaussianLaguerreBeams import ModifiedGaussLaguerreModeSet as modGLM
+    from common.constants import c, pi, j
+
 
     plt.style.use('mint')
 
-    mod_beam = modGLM(w0=1.0, k=1.0, maxP=6, maxL=6)
+    mod_beam = modGLM(w0=.5, k=.5, maxP=6, maxL=6)
 
-    width = 256
+    width = 80
     z_nf = 1.0
-    z_ff = 100
+    z_ff = 1000
 
-    xx, yy = np.meshgrid(np.mgrid[-20:20:width*j], np.mgrid[-20:20:width*j]);
+    xx, yy = np.meshgrid(np.mgrid[-2:2:width*j], np.mgrid[-2:2:width*j]);
 
     # Calculate the cylindrical coordinates
     r = np.sqrt(xx**2 + yy**2);

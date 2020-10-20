@@ -23,8 +23,8 @@ class GaussLaguerreModeBase():
         # Indexing runs from p=0 to p=maxP in the first dimension and
         # l=0 to maxL then -maxL to l=-1 in the second.
 
-        self._coeffs = np.full((maxP+1, 2*maxL+1), complex(1, 0),dtype=complex)
-
+        self._coeffs = np.full((maxP+1, 2*maxL+1), complex(1, 0), \
+                               dtype=complex)
         self._k = k    # The wavenumber of the G-L modes
         self._w0 = w0  # The beam waist radius of the G-L modes
         self._maxP = maxP  # The highest index of the axial modes included in the modeset

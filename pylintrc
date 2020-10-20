@@ -139,7 +139,7 @@ variable-rgx=([A-Za-z_][A-Za-z0-9_]{1,30}$)
 inlinevar-rgx=[A-Za-z_][A-Za-z0-9_]*$
 
 # Good variable names which should always be accepted, separated by a comma
-good-names=i,j,l,k,v,qs,p,a,t,r,u,x,f,e,z,w,R,F
+good-names=i,j,l,k,v,qs,p,a,t,r,u,x,y,z,f,e,w,R,F,m,n,N
 
 # Bad variable names which should always be refused, separated by a comma
 bad-names=foo,bar,baz,toto,tutu,tata
