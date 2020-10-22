@@ -59,7 +59,7 @@ def herm_n(x, n=0):
     return eval_hermite(n, x)
 
 
-def amplitude(x, y, z, k, w0, l=0, p=0):
+def amplitude(x, y, z, k, w0, l=0, m=0):
     """
     docs
     """
@@ -68,10 +68,10 @@ def amplitude(x, y, z, k, w0, l=0, p=0):
     a_x = alpha(x, w)
     a_y = alpha(y, w)
 
-    return w0 / w * herm_n(a_x, n=l) * herm_n(a_y, n=p)
+    return w0 / w * herm_n(a_x, n=l) * herm_n(a_y, n=m)
 
 
-def longitude(x, y, z, k, w0, l=0, p=0):
+def longitude(x, y, z, k, w0, l=0, m=0):
     """
     docs
     """
@@ -84,13 +84,13 @@ def longitude(x, y, z, k, w0, l=0, p=0):
 
     return exp(- a**2 / 2 - j * k * r**2 / 2 / R \
             - j * k * z \
-            + (l + p + 1) * phi0(z, z0))
+            + (l + m + 1) * phi0(z, z0))
 
 
 
-def gauss_herm_modes(x, y, z, k, w0, l=0, p=0):
+def gauss_herm_modes(x, y, z, k, w0, l=0, m=0):
     """
     docs
     """
 
-    return amplitude(x, y, z, k, w0, l, p) * longitude(x, y, z, k, w0, l, p)
+    return amplitude(x, y, z, k, w0, l, m) * longitude(x, y, z, k, w0, l, m)

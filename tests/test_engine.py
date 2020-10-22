@@ -15,6 +15,8 @@ if __name__ == "__main__":
 
     from engine.simulator import PytchoSimulator
     from beams.GaussianLaguerreBeams import GaussLaguerreModeSet as GLM
+    from beams.GaussianLaguerreBeams import GaussLaguerreModeSet as GLM
+
 
     plt.style.use('mint')
 
@@ -29,26 +31,29 @@ if __name__ == "__main__":
 
     amp = img_as_float(imread(ARGS.amplitude, as_gray=True))
     phase = img_as_float(imread(ARGS.phase, as_gray=True))
-    obj = amp * np.exp(j * phase)
+    obj = amp * np.exp(j * phase * np.pi / 2)
     height, width = obj.shape
 
-    ptycho = PytchoSimulator()
+    ptycho = PytchoSimulator(alpha=0.10, beta=2.0, probe=50,
+                             start=(2, 2), shift=20, rc=(11, 11),
+                             iterations=200)
 
-    beam = GLM(w0=.1, k=2, maxP=6, maxL=6)
-
-    width = 80
-    z = 1.0
-
+    beam = GLM(w0=50, k=5, maxP=3, maxL=3)
+    width = 50
+    z = 5
     xx, yy = np.meshgrid(np.mgrid[-10:10:width*j], np.mgrid[-10:10:width*j]);
 
     # Calculate the cylindrical coordinates
     r = np.sqrt(xx**2 + yy**2);
     phi = np.arctan2(yy, xx);
+    c = np.zeros(beam.shape)
 
-    illu_func = beam.field(r, phi, z, p=0, l=3)
+    c[2][2] = 1.0
+
+    illu_func = beam.field(r, phi, z, c)
 
     '''
-    phi = zernike_modes([(0, 6, 10)], ptycho.probe, width)
+    phi = zernike_modes([(0, 6, 1)], ptycho.probe, width)
     gau_mask = gau_kern(width, ptycho.probe / 2.35482,
                         normalize=False)
     gau_mask = gau_mask > 0.5
@@ -62,10 +67,9 @@ if __name__ == "__main__":
     '''
 
     err_ival = 2
-    diff_patterns = ptycho.diffract(obj, illu_func, mode='random', amount=0.5)
+    diff_patterns = ptycho.diffract(obj, illu_func)
     obj_est, rms, sse = ptycho.pie(obj, illu_func, diff_patterns,
-                                                   err_ival=err_ival,
-                                                   permute=True)
+                                   err_ival=err_ival, permute=True)
 
     x_sse = range(0, ptycho.iterations, err_ival)
     y_sse = sse
@@ -76,17 +80,17 @@ if __name__ == "__main__":
 
     ax[0][0].imshow(np.abs(obj_est), cmap='gray')
     ax[0][0].set_title('Estimated Object\'s amplitude')
-    ax[0][1].imshow(np.angle(obj_est), cmap='gray', vmin=-pi, vmax=pi)
+    ax[0][1].imshow(np.angle(obj_est), cmap='gray')
     ax[0][1].set_title('Estimated Object\'s phase')
 
-    ax[1][0].imshow(np.abs(illu_func), cmap='gray')
+    ax[1][0].imshow(np.abs(illu_func), cmap='RdBu')
     ax[1][0].set_title('Actual Probe\'so amplitude')
-    ax[1][1].imshow(np.angle(illu_func), cmap='gray')
+    ax[1][1].imshow(np.angle(illu_func), cmap='RdBu')
     ax[1][1].set_title('Actual Probe\'so phase')
 
     figg, axx = plt.subplots()
 
-    axx.plot(x_Eo, y_Eo, lw=1)
+    axx.plot(x_Eo, y_Eo)
     axx.set_title(r'RMS Error for PIE')
     axx.set_xlabel('Iterations')
     axx.set_ylabel('En')

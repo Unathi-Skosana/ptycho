@@ -19,9 +19,8 @@ class PytchoSimulatorBase():
     docs
     """
 
-    def __init__(self, alpha=1., beta=1., probe=80,
-                 start=(5, 5), shift=10, rc=(12, 12),
-                 iterations=200):
+    def __init__(self, alpha, beta, probe,
+                 start, shift, rc, iterations):
 
         self._alpha = alpha
         self._beta = beta
@@ -135,8 +134,8 @@ class PytchoSimulatorBase():
 
 
 class PytchoSimulator(PytchoSimulatorBase):
-    def __init__(self, alpha=1., beta=1., probe=80,
-                 start=(5, 5), shift=15, rc=(12, 12),
+    def __init__(self, alpha=1., beta=1., probe=50,
+                 start=(2, 2), shift=20, rc=(11, 11),
                  iterations=200):
         super().__init__(alpha=alpha, beta=beta,
                          probe=probe, start=start,
@@ -190,15 +189,15 @@ class PytchoSimulator(PytchoSimulatorBase):
         def diff(k):
             dx_k, dy_k = 0, 0
 
-            if mode == 'position' and k % 2 == 0:
-                dx_k = np.random.randint(low=-4, high=4)
-                dy_k = np.random.randint(low=-4, high=4)
+            if mode == 'position' and k % 5 == 0:
+                dx_k = np.random.randint(low=-2, high=2)
+                dy_k = np.random.randint(low=-2, high=2)
 
             x_k, y_k = self._illu_pos[k]
             i, j = np.int(np.round((x_k - self._start[0]) / self._shift)), \
                 np.int(np.round((y_k - self._start[1]) / self._shift))
 
-            ext_wave = obj[y_k + dy_k:y_k + dy_k + self._probe, 
+            ext_wave = obj[y_k + dy_k:y_k + dy_k + self._probe,
                            x_k + dx_k:x_k + dx_k + self._probe] * illu_func
             ext_diff = np.abs(fftshift(fft2(ext_wave)))
 
@@ -217,9 +216,9 @@ class PytchoSimulator(PytchoSimulatorBase):
                             noise.')
 
                 def f(col):
-                    noisy_col = list(map(lambda I: I + 
-                                     np.random.uniform(low=-v * I, high=v * I),
-                                     col))
+                    noisy_col = list(map(lambda I: I +
+                                         np.random.uniform(low=-v * I, high=v * I),
+                                         col))
                     return np.array(noisy_col)
 
                 noisy_vec = np.fromiter(chain.from_iterable(f(i) for i in ext_diff),
@@ -268,9 +267,8 @@ class PytchoSimulator(PytchoSimulatorBase):
         obj_est = np.zeros((height, width), dtype=np.complex64)
 
         # illumination function initial guess
-        illu_func_est = gau_kern(self._probe, self._probe / 2.35482)
-        illu_func_est = illu_func_est > 0.5
-        illu_func_est = illu_func_est.astype(np.int)
+        illu_func_est = np.ones((self._probe, self._probe),
+                dtype=np.complex64) * np.pi
 
         # initialization for SSE errors
         sse = np.zeros(err_n)
@@ -300,15 +298,18 @@ class PytchoSimulator(PytchoSimulatorBase):
                 ext_diff_c = diff_patterns[x_loc * self.rc[0] + y_loc] \
                     * np.exp(1j * np.angle(ext_diff_g))
                 ext_wave_c = ifft2(ifftshift(ext_diff_c))
+
                 ext_wave_upd = obj_g + (ext_wave_c - ext_wave_g) \
-                    * self._alpha * np.conj(illu_func_est) \
-                    / np.power(np.max(np.abs(illu_func_est)), 2)
+                    * 0.2 * np.conj(illu_func_est) \
+                    / ((1. - self._alpha) * np.power(np.abs(illu_func_est), 2) \
+                    + self._alpha * np.power(np.max(np.abs(illu_func_est)), 2))
                 obj_est[y_i:y_i+self._probe, x_i:x_i+self._probe] = ext_wave_upd
 
                 if k >= hold:
                     illu_func_est = illu_func_est + (ext_wave_c - ext_wave_g) \
-                        * self._beta * np.conj(obj_g_cpy) \
-                        / np.power(np.max(np.abs(obj_g_cpy)), 2)
+                        * 1.0 * np.conj(obj_g_cpy) \
+                        / ((1 - self._beta) * np.power(np.abs(obj_g_cpy), 2) \
+                        + self._beta * np.power(np.max(np.abs(obj_g_cpy)), 2))
 
                 # arbitrary
                 if x_loc * self.rc[0] + y_loc == half_rc:
@@ -392,8 +393,9 @@ class PytchoSimulator(PytchoSimulatorBase):
                     np.exp(1j * np.angle(ext_diff_g))
                 ext_wave_c = ifft2(ifftshift(ext_diff_c))
                 ext_wave_upd = obj_g + (ext_wave_c - ext_wave_g) \
-                    * self._alpha * np.conj(illu_func) \
-                    / np.power(np.max(np.abs(illu_func)), 2)
+                    * 0.5 * np.conj(illu_func) \
+                    / ((1 - self._alpha)*np.power(np.max(np.abs(illu_func)),2) \
+                    + self._alpha * np.power(np.max(np.abs(illu_func)), 2))
                 obj_est[y_i:y_i+self._probe, x_i:x_i+self._probe] = ext_wave_upd
 
                 # arbitrary
