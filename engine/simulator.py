@@ -11,17 +11,17 @@ import numpy as np
 from joblib import Parallel, delayed
 from scipy.fft import fft2, ifft2, fftshift, ifftshift
 from itertools import chain, product
-from utils.filters import gau_kern
 
 
 class PytchoSimulatorBase():
     """
-    docs
+    The base class of a ptychography simulator, holding the various
+    parameters of the simulation.
     """
 
     def __init__(self, alpha, beta, probe,
                  start, shift, rc, iterations):
-
+        """ Initialize class instance """
         self._alpha = alpha
         self._beta = beta
         self._probe = probe
@@ -34,97 +34,91 @@ class PytchoSimulatorBase():
 
     @property
     def alpha(self):
-        """
-        docs
-        """
+        """ Get parameter alpha """
 
         return self._alpha
 
     @alpha.setter
     def alpha(self, _alpha):
-        """
-        docs
-        """
+        """ Set the value of alpha """
 
         self._alpha = _alpha
 
     @property
     def beta(self):
-        """
-        docs
-        """
+        """ Get parameter beta """
 
         return self._beta
 
     @beta.setter
     def beta(self, _beta):
-        """
-        docs
-        """
+        """ Set the value of beta """
+
         self._beta = _beta
 
     @property
     def probe(self):
-        """
-        docs
-        """
+        """ Get probe size """
+
         return self._probe
 
     @probe.setter
     def probe(self, _probe):
+        """ Set value of probe """
+
         self._probe = _probe
 
     @property
     def shift(self):
-        """
-        docs
-        """
+        """ Get probe shift """
+
         return self._shift
 
     @shift.setter
     def shift(self, _shift):
-        """
-        docs
-        """
+        """ Set value of probe shift """
 
         self._shift = _shift
 
     @property
     def start(self):
-        """
-        docs
-        """
+        """ Get start position of probe """
+
         return self._start
 
     @start.setter
     def start(self, _start):
+        """ Set the value of start position """
+
         self._start = _start
 
     @property
     def rc(self):
-        """
-        docs
-        """
+        """ Get rows and columns of probe positions """
+
         return self._rc
 
     @rc.setter
     def rc(self, _rc):
-        self._rc = _rc
+        """ Set the value of rows and columns of probe positions """
 
+        self._rc = _rc
 
     @property
     def iterations(self):
-        """
-        docs
-        """
+        """ Get number of iterations """
+
         return self._iterations
 
     @iterations.setter
     def iterations(self, _iterations):
+        """ Set the value of iterations """
+
         self._iterations = _iterations
 
-
     def compute_illu_pos(self):
+        """ Compute the illumination positions of the probe on the image"""
+
         s_x, s_y = self._start
         rows, cols = self._rc
         x = np.arange(s_x, s_x + rows * self._shift, self._shift)
@@ -134,9 +128,14 @@ class PytchoSimulatorBase():
 
 
 class PytchoSimulator(PytchoSimulatorBase):
+    """
+    A class for simulating a ptychographic image reconstructions
+    """
+
     def __init__(self, alpha=1., beta=1., probe=50,
                  start=(2, 2), shift=20, rc=(11, 11),
                  iterations=200):
+        """ Initialize class instance """
         super().__init__(alpha=alpha, beta=beta,
                          probe=probe, start=start,
                          shift=shift, rc=rc,
@@ -200,7 +199,6 @@ class PytchoSimulator(PytchoSimulatorBase):
             ext_wave = obj[y_k + dy_k:y_k + dy_k + self._probe,
                            x_k + dx_k:x_k + dx_k + self._probe] * illu_func
             ext_diff = np.abs(fftshift(fft2(ext_wave)))
-
 
             if mode == 'poisson':
                 mu = kwargs['mean']
@@ -268,7 +266,7 @@ class PytchoSimulator(PytchoSimulatorBase):
 
         # illumination function initial guess
         illu_func_est = np.ones((self._probe, self._probe),
-                dtype=np.complex64) * np.pi
+                                dtype=np.complex64) * np.pi
 
         # initialization for SSE errors
         sse = np.zeros(err_n)
