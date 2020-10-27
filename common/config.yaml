@@ -1,9 +1,0 @@
-alpha: 1.0
-beta: 1.0
-probe: 80
-shift: 15
-p_x: 5
-p_y: 5
-rows: 12
-cols: 12
-iterations: 200

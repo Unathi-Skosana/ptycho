@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
     from engine.simulator import PytchoSimulator
     from beams.GaussianLaguerreBeams import GaussLaguerreModeSet as GLM
-    from beams.GaussianLaguerreBeams import GaussLaguerreModeSet as GLM
+    from beams.GaussianHermiteBeams import GaussHermiteModeSet as GHM
 
 
     plt.style.use('mint')
@@ -38,19 +38,19 @@ if __name__ == "__main__":
                              start=(2, 2), shift=20, rc=(11, 11),
                              iterations=200)
 
-    beam = GLM(w0=50, k=5, maxP=3, maxL=3)
+    beam = GLM(w0=50, k=30, maxL=6, maxP=6)
     width = 50
-    z = 5
+    zz = 1.0
     xx, yy = np.meshgrid(np.mgrid[-10:10:width*j], np.mgrid[-10:10:width*j]);
 
     # Calculate the cylindrical coordinates
-    r = np.sqrt(xx**2 + yy**2);
+    rr = np.sqrt(xx**2 + yy**2);
     phi = np.arctan2(yy, xx);
     c = np.zeros(beam.shape)
 
-    c[2][2] = 1.0
+    c[5][2] = 2.0
 
-    illu_func = beam.field(r, phi, z, c)
+    illu_func = beam.field(rr, phi, zz, c)
 
     '''
     phi = zernike_modes([(0, 6, 1)], ptycho.probe, width)

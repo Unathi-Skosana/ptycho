@@ -393,7 +393,7 @@ class PytchoSimulator(PytchoSimulatorBase):
                     np.exp(1j * np.angle(ext_diff_g))
                 ext_wave_c = ifft2(ifftshift(ext_diff_c))
                 ext_wave_upd = obj_g + (ext_wave_c - ext_wave_g) \
-                    * 0.5 * np.conj(illu_func) \
+                    * 0.3 * np.conj(illu_func) \
                     / ((1 - self._alpha)*np.power(np.max(np.abs(illu_func)),2) \
                     + self._alpha * np.power(np.max(np.abs(illu_func)), 2))
                 obj_est[y_i:y_i+self._probe, x_i:x_i+self._probe] = ext_wave_upd

@@ -3,6 +3,8 @@ File: GaussianLaguerreBeams.py
 Author: Paul Grimes 
 Github: https://github.com/PaulKGrimes/GaussianBeams
 Description: 
+
+Adapted from https://github.com/PaulKGrimes/GaussianBeams
 """
 
 import numpy as np
@@ -14,75 +16,76 @@ from .ModifiedGaussianLaguerre import mod_gauss_lag_modes_nf as modGLM_nf
 
 class GaussLaguerreModeBase():
     """
-    The base class of the GLM and modified GLM classes.  This base class implements
-    the common parameters and handles the storage and manipulation of the mode coefficients
+    The base class of the GLM and modified GLM classes.
     """
 
     def __init__(self, w0=1., k=1., maxP=0, maxL=0):
+        """ Initialize class instance """
         self._k = k    # The wavenumber of the G-L modes
         self._w0 = w0  # The beam waist radius of the G-L modes
         self._shape = (maxP + 1, 2*maxL + 1)
 
     @property
     def k(self):
-        """
-        return wavenumber k
-        """
+        """ Get wavenumber k """
 
         return self._k
 
     @k.setter
     def k(self, new_k):
-        """
-        Set the value of k
-        """
+        """ Set the value of k """
 
         self._k = new_k
 
     @property
     def w0(self):
-        """
-        return the beam waist radius w0
-        """
+        """ Get beam waist radius w0 """
 
         return self._w0
 
     @w0.setter
     def w0(self, new_w0):
-        """
-        Set the value of w0
-        """
+        """ Set the value of w0 """
 
         self._w0 = new_w0
 
     @property
     def shape(self):
-        """
-        return the beam waist radius w0
-        """
+        """ Get shape of mode coefficients shape """
 
         return self._shape
+
 
 class GaussLaguerreModeSet(GaussLaguerreModeBase):
     """
     A class holding a set of Gauss-Laguerre modes, defined in
-    the paraxial limit.
+    the cylindrical coordinates.
     """
 
     def __init__(self, w0=1., k=1., maxP=0, maxL=0):
+        """ Initialize class instance """
         super().__init__(w0, k, maxP, maxL)
-
 
     def field(self, r, phi, z, coeffs):
         """
-        Return the value of the field at r, phi, z; either for the sum of
-        all modes (p, l) = None, for a specified axial mode
-        p (sum over azimuthal modes), or for a specific (p, l) mode.
+        Computes the value of the field at r, phi, z for a sum of
+        all modes in coeffs
+
+        Args:
+            r: radial distance from center axis of the beam
+            phi: azimuthal angle between the reference direction and projection
+                 of r onto the plane
+            z: axial distance from the beam waist
+            coeffs:  coefficients of all (maxL + 1)(2*maxP + 1) modes
+        Returns:
+            value of field
+        Raises:
+            ValueError: if the coefficients array is misshaped.
         """
 
         if self._shape != coeffs.shape:
-            raise ValueError("GaussLaguerreModeSet.field: must set mode index p \
-                          if mode index l is set")
+            raise ValueError("GaussLaguerreModeSet.field: coefficients must \
+                        have a shape of {}".format(self._shape))
 
         result = np.zeros_like(r, dtype=np.complex64)
 
@@ -100,19 +103,28 @@ class ModifiedGaussLaguerreModeSet(GaussLaguerreModeBase):
     """
 
     def __init__(self, w0=1., k=1., maxP=0, maxL=0):
-        super(ModifiedGaussLaguerreModeSet, self).__init__(w0, k, maxP, maxL)
+        super().__init__(w0, k, maxP, maxL)
 
     def near_field(self, r, phi, z, coeffs):
         """
-        Return the value of the field at r, phi, z; either for the sum of all
-        modes (p, l) = None, for a specified axial mode 
-        p (sum over azimuthal modes), or for a specific (p, l) mode.
+        Computes the value of the near field at r, phi, z for a sum of
+        all modes in coeffs
+
+        Args:
+            r: radial distance from center axis of the beam
+            phi: azimuthal angle between the reference direction and projection
+                 of r onto the plane
+            z: axial distance from the beam waist
+            coeffs:  coefficients of all (maxL + 1)(2*maxP + 1) modes
+        Returns:
+            value of near field
+        Raises:
+            ValueError: if the coefficients array is misshaped.
         """
 
-
         if self._shape != coeffs.shape:
-            raise ValueError("GaussLaguerreModeSet.field: must set mode index p \
-                          if mode index l is set")
+            raise ValueError("GaussLaguerreModeSet.field: coefficients must \
+                        have a shape of {}".format(self._shape))
 
         result = np.zeros_like(r, dtype=np.complex64)
         for p in range(coeffs.shape[0]):
@@ -123,14 +135,24 @@ class ModifiedGaussLaguerreModeSet(GaussLaguerreModeBase):
 
     def far_field(self, theta, phi, z, coeffs):
         """
-        Return the value of the far field at theta, phi; either for the sum of all
-        modes (p, l) = None, for a specified axial mode
-        p (sum over azimuthal modes), or for a specific (p, l) mode.
+        Computes the value of the far field at theta , phi, z for a sum of
+        all modes in coeffs
+
+        Args:
+            theta: angle that parameterizes the far field i.e angle of boresight
+            phi: azimuthal angle between the reference direction and projection
+                 of r onto the plane
+            z: axial distance from the beam waist
+            coeffs:  coefficients of all (maxL + 1)(2*maxP + 1) modes
+        Returns:
+            value of near field
+        Raises:
+            ValueError: if the coefficients array is misshaped.
         """
 
-        if coeffs.shape != self._shape:
-            raise ValueError("GaussLaguerreModeSet.field: must set mode index p \
-                          if mode index l is set")
+        if self._shape != coeffs.shape:
+            raise ValueError("GaussLaguerreModeSet.field: coefficients must \
+                        have a shape of {}".format(self._shape))
 
         result = np.zeros_like(theta, dtype=np.complex64)
         for p in range(coeffs.shape[0]):

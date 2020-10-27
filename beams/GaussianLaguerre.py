@@ -18,35 +18,74 @@ import numpy as np
 
 def beam_curv(z, z0):
     """
-    doc
+    Computes the radius of the curvature of the beam wavefront at an axial distance of
+    z from the beam's waist.
+
+    Args:
+        z: axial distance from beam's waist
+        z0: rayleigh range
+    Returns:
+        radius of curvature
     """
     return z + z0**2 / z
 
 
 def beam_rad(z, w0, z0):
     """
-    doc
+    Computes the radius at which the field amplitude fall to 1\e of their
+    axial values' at the plane z along the beam.
+
+    Args:
+        z: axial distance from beam's waist
+        w0: waist radius
+        z0: rayleigh range
+    Returns:
+        radius at which the amplitude fall to 1/e
     """
+ 
     return w0 * sqrt(1 + (z/z0)**2)
 
 
-def rayleight_range(w0, k):
+def rayleigh_range(w0, k):
     """
-    doc
+    Computes the rayleigh range, which is the distance along the propagation
+    direction of a beam from the waist to the place where the area of cross
+    section is doubled.
+    
+    Args:
+        w0: waist radius of beam
+        k: wave number in the direction of propagation of beam
+    Returns:
+        rayleigh range
     """
+
     return k * w0**2
 
 
 def phi0(z, z0):
     """
-    doc
+    Computes the Gouy phase acquired by a beam at an axial distance of z
+
+    Args:
+        z: axial distance from beam's waist
+        z0: rayleigh range
+    Returns:
+        gouy phase
     """
+
     return arctan(z / z0)
 
 
 def alpha(r, w):
     """
-    doc
+    Computes dimensionless parameter involving the radial distance and the beam
+    radius for calculation convenience.
+
+    Args:
+        r: radial distance from the center axis of the beam
+        w: radius at which the field amplitude fall to 1/e
+    Returns:
+        dimensionless parameter
     """
 
     return np.sqrt(2) * r / w
@@ -54,7 +93,15 @@ def alpha(r, w):
 
 def lag_pl(x, p=0, l=0, normalize=True):
     """
-    return the value of the Gaussian-Laguerre polynomial at x
+    Evaluates the generalized Laguerre polynomial at x
+
+    Args:
+        x: value of evaluation
+        p: degree of polynomial
+        l: integer parameter in the Laguerre diff eq.
+        normalize: normalize polynomial or not
+    Returns:
+        pth order generalized Laguerre polynomial at x
     """
 
     C_pl = sqrt(2 * factorial(p) / pi / factorial(p + abs(l)))
@@ -66,34 +113,69 @@ def lag_pl(x, p=0, l=0, normalize=True):
 
 def amplitude(r, z, k, w0, p=0, l=0):
     """
-    docs
+    Computes the amplitude of a Gaussian-Laguerre beam
+
+    Args:
+        r: radial distance from the center axis of the beam
+        z: axial distance from the beam waist
+        k: wave number in the direction of propagation
+        w0: beam waist radius
+        l: degree of mode in the x direction
+        m: degree of mode in the y direction
+    Returns:
+        amplitude of Gaussian-Hermite beam
     """
-    z0 = rayleight_range(w0, k)
+    z0 = rayleigh_range(w0, k)
     w = beam_rad(z, w0, z0)
     a = alpha(r, w)
 
     return w0 / w * a**abs(l) * lag_pl(a**2, p, l)
 
 
-def longitude(r, phi, z, k, w0, p, l):
+def phase(r, phi, z, k, w0, p=0, l=0):
     """
-    docs
+    Computes the amplitude of a Gaussian-Laguerre beam
+
+    Args:
+        r: radial distance from the center axis of the beam
+        phi: azimuthal angle between the reference direction and projection
+            of r onto the plane
+        z: axial distance from the beam waist
+        k: wave number in the direction of propagation
+        w0: beam waist radius
+        p: degree of generalized Laguerre polynomial
+        l: integer in the Laguerre diff eq.
+    Returns:
+        phase of Gaussian-Laguerre beam
     """
 
-    z0 = rayleight_range(w0, k)
+    z0 = rayleigh_range(w0, k)
     w = beam_rad(z, w0, z0)
     R = beam_curv(z, z0)
     a = alpha(r, w)
 
-    return exp(- a**2 / 2 - j * k * r**2 / 2 / R \
-            - j * k * z \
-            + (2 * p + abs(l) + 1) * phi0(z, z0) \
-            - j * l * phi)
+    return exp(- a**2 / 2 - j * k * r**2 / 2 / R
+               - j * k * z
+               + (2 * p + abs(l) + 1) * phi0(z, z0)
+               - j * l * phi)
 
 
 def gauss_lag_modes(r, phi, z, k, w0, p=0, l=0):
     """
-    docs
+    Computes Gaussian-Laguerre mode with amplitude and phase
+
+    Args:
+        r: radial distance from the center axis of the beam
+        phi: azimuthal angle between the reference direction and projection
+            of r onto the plane
+        z: axial distance from the beam waist
+        k: wave number in the direction of propagation
+        w0: beam waist radius
+        p: degree of generalized Laguerre polynomial
+        l: integer in the Laguerre diff eq.
+    Returns:
+        complex Gaussian-Laguerre mode
     """
 
-    return amplitude(r, z, k, w0, p, l) * longitude(r, phi, z, k, w0, p, l)
+    return amplitude(r, z, k, w0, p, l) * \
+        phase(r, phi, z, k, w0, p, l)
