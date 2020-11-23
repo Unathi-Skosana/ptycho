@@ -11,6 +11,7 @@ import numpy as np
 from joblib import Parallel, delayed
 from scipy.fft import fft2, ifft2, fftshift, ifftshift
 from itertools import chain, product
+from utils.filters import gau_kern
 
 
 class PytchoSimulatorBase():
@@ -186,29 +187,30 @@ class PytchoSimulator(PytchoSimulatorBase):
         # Routine for parallelization, no need to worry about racing conditions
         # as the diffraction patterns are computed independently of one another
         def diff(k):
-            dx_k, dy_k = 0, 0
+            dx, dy = 0, 0
 
-            if mode == 'position' and k % 5 == 0:
-                dx_k = np.random.randint(low=-2, high=2)
-                dy_k = np.random.randint(low=-2, high=2)
+            if mode == 'position':
+                positions = kwargs.get('positions', (10, 20, 30, 40, 50))
+                if k in positions:
+                    dx = np.random.randint(low=-2, high=2)
+                    dy = np.random.randint(low=-2, high=2)
 
             x_k, y_k = self._illu_pos[k]
-            i, j = np.int(np.round((x_k - self._start[0]) / self._shift)), \
-                np.int(np.round((y_k - self._start[1]) / self._shift))
-
-            ext_wave = obj[y_k + dy_k:y_k + dy_k + self._probe,
-                           x_k + dx_k:x_k + dx_k + self._probe] * illu_func
+            i = np.int(np.round((x_k - self._start[0]) / self._shift))
+            j = np.int(np.round((y_k - self._start[1]) / self._shift))
+            ext_wave = obj[y_k + dy:y_k + dy + self._probe,
+                           x_k + dx:x_k + dx + self._probe] * illu_func
             ext_diff = np.abs(fftshift(fft2(ext_wave)))
 
             if mode == 'poisson':
-                mu = kwargs['mean']
+                mu = kwargs.get('mean', 10e5)
                 ext_inten = ext_diff ** 2
                 fac = mu / np.sum(ext_inten)
                 ext_inten_noisy = np.random.poisson(ext_inten * fac) / fac
                 ext_diff = np.sqrt(ext_inten_noisy)
 
             if mode == 'random':
-                v = kwargs['amount']
+                v = kwargs.get('amount', 0.05)
                 if not 0 <= v <= 1.0:
                     raise ValueError('Mean must be between 0 and 1.0 for random \
                             noise.')
@@ -232,6 +234,7 @@ class PytchoSimulator(PytchoSimulatorBase):
 
         return diff_patterns
 
+
     def epie(self, obj, diff_patterns, **kwargs):
         """
         Args:
@@ -246,7 +249,7 @@ class PytchoSimulator(PytchoSimulatorBase):
         """
 
         # parameters
-        hold = kwargs.get('hold', 10)
+        hold = kwargs.get('hold', 1)
         err_ival = kwargs.get('err_ival', 4)
         permute = kwargs.get('permute', False)
 
@@ -265,8 +268,7 @@ class PytchoSimulator(PytchoSimulatorBase):
         obj_est = np.zeros((height, width), dtype=np.complex64)
 
         # illumination function initial guess
-        illu_func_est = np.ones((self._probe, self._probe),
-                                dtype=np.complex64) * np.pi
+        illu_func_est = np.ones((self._probe, self._probe))
 
         # initialization for SSE errors
         sse = np.zeros(err_n)
@@ -291,46 +293,44 @@ class PytchoSimulator(PytchoSimulatorBase):
                 # steps 1 - 7 from doi:10.1016/j.ultramic.2004.11.006
                 obj_g = obj_est[y_i:y_i+self._probe, x_i:x_i+self._probe]
                 obj_g_cpy = np.copy(obj_g)
-                ext_wave_g = obj_g * illu_func_est
+                ext_wave_g = illu_func_est * obj_g
                 ext_diff_g = fftshift(fft2(ext_wave_g))
                 ext_diff_c = diff_patterns[x_loc * self.rc[0] + y_loc] \
                     * np.exp(1j * np.angle(ext_diff_g))
                 ext_wave_c = ifft2(ifftshift(ext_diff_c))
-
                 ext_wave_upd = obj_g + (ext_wave_c - ext_wave_g) \
-                    * 0.2 * np.conj(illu_func_est) \
-                    / ((1. - self._alpha) * np.power(np.abs(illu_func_est), 2) \
-                    + self._alpha * np.power(np.max(np.abs(illu_func_est)), 2))
+                    * self._alpha * illu_func_est.conj() \
+                    / np.max(np.abs(illu_func_est))**2
                 obj_est[y_i:y_i+self._probe, x_i:x_i+self._probe] = ext_wave_upd
 
                 if k >= hold:
                     illu_func_est = illu_func_est + (ext_wave_c - ext_wave_g) \
-                        * 1.0 * np.conj(obj_g_cpy) \
-                        / ((1 - self._beta) * np.power(np.abs(obj_g_cpy), 2) \
-                        + self._beta * np.power(np.max(np.abs(obj_g_cpy)), 2))
+                        * self._beta * obj_g_cpy.conj() \
+                        / np.max(np.abs(obj_g_cpy))**2
 
                 # arbitrary
                 if x_loc * self.rc[0] + y_loc == half_rc:
                     ext_diff_sse = ext_diff_g
 
             if k % err_ival == 0:
-                err = np.abs(np.power(np.abs(diff_patterns[half_rc]), 2)
-                             - np.power(np.abs(ext_diff_sse), 2))
-                sse[err_i] = np.sum(np.sum(np.power(err, 2))) / (height * width)
+                err = np.abs(np.abs(diff_patterns[half_rc])**2
+                             - np.abs(ext_diff_sse)**2)
+                sse[err_i] = np.sum(np.sum(err**2)) / (height * width)
                 obj_est_n[err_i] = obj_est
                 err_i += 1
 
             k += 1
 
         def gamma(obj_est_n):
-            g_fac = np.sum(obj * np.conj(obj_est_n)) \
-                    / np.sum(np.power(np.abs(obj_est_n), 2))
-            return np.sum(np.power(np.abs(obj - g_fac * obj_est_n), 2)) \
-                / np.sum(np.power(np.abs(obj), 2))
+            g_fac = np.sum(obj * obj_est_n.conj()) \
+                    / np.sum(np.abs(obj_est_n)**2)
+            return np.sum(np.abs(obj - g_fac * obj_est_n)**2) \
+                / np.sum(np.abs(obj)**2)
 
         rms = np.array(list(map(gamma, obj_est_n)))
 
         return obj_est, illu_func_est, rms, sse
+
 
     def pie(self, obj, illu_func, diff_patterns, **kwargs):
         """
@@ -373,6 +373,9 @@ class PytchoSimulator(PytchoSimulatorBase):
         # holder variable for the estimated object after some iterations
         obj_est_n = np.zeros((err_n, height, width), dtype=np.complex64)
 
+        gau = gau_kern(self._probe, self.probe / np.sqrt(8 * np.log(2)),
+                normalize=False)
+
         k = 0
         while k < self._iterations:
             if permute:
@@ -391,9 +394,11 @@ class PytchoSimulator(PytchoSimulatorBase):
                     np.exp(1j * np.angle(ext_diff_g))
                 ext_wave_c = ifft2(ifftshift(ext_diff_c))
                 ext_wave_upd = obj_g + (ext_wave_c - ext_wave_g) \
-                    * 0.3 * np.conj(illu_func) \
-                    / ((1 - self._alpha)*np.power(np.max(np.abs(illu_func)),2) \
-                    + self._alpha * np.power(np.max(np.abs(illu_func)), 2))
+                    * np.abs(illu_func) * illu_func.conj() \
+                    / (np.max(np.abs(illu_func)) * \
+                    (np.abs(illu_func)**2 + \
+                    self._alpha * np.max(np.abs(illu_func))))
+
                 obj_est[y_i:y_i+self._probe, x_i:x_i+self._probe] = ext_wave_upd
 
                 # arbitrary
@@ -401,19 +406,208 @@ class PytchoSimulator(PytchoSimulatorBase):
                     ext_diff_sse = ext_diff_g
 
             if k % err_ival == 0:
-                err = np.abs(np.power(np.abs(diff_patterns[half_rc]), 2)
-                             - np.power(np.abs(ext_diff_sse), 2))
-                sse[err_i] = np.sum(np.sum(np.power(err, 2))) / (height * width)
+                err = np.abs(np.abs(diff_patterns[half_rc])**2
+                             - np.abs(ext_diff_sse)**2)
+                sse[err_i] = np.sum(np.sum(err**2)) / (height * width)
                 obj_est_n[err_i] = obj_est
                 err_i += 1
 
             k += 1
 
         def gamma(obj_est_n):
-            g_fac = np.sum(obj * np.conj(obj_est_n)) \
-                    / np.sum(np.power(np.abs(obj_est_n), 2))
-            return np.sum(np.power(np.abs(obj - g_fac * obj_est_n), 2)) \
-                / np.sum(np.power(np.abs(obj), 2))
+            g_fac = np.sum(obj * obj_est_n.conj()) \
+                    / np.sum(np.abs(obj_est_n)**2)
+            return np.sum(np.abs(obj - g_fac * obj_est_n)**2) \
+                / np.sum(np.abs(obj)**2)
+
+        rms = np.array(list(map(gamma, obj_est_n)))
+
+        return obj_est, rms, sse
+
+
+    def rpie(self, obj, illu_func, diff_patterns, **kwargs):
+        """
+        Args:
+            obj: Object
+            illu_func: Illumination function
+            illu_pos: Illumination positions for the probe across the object O
+            diff_patterns: Diffraction pattern
+            **kwargs: Arbitrary keyword arguments.
+        Returns:
+            Estimated object, root mean square error and sum of least squares error
+            of the estimate
+        """
+
+        # parameters
+        err_ival = kwargs.get('err_ival', 4)
+        permute = kwargs.get('permute', False)
+
+
+        # loop temp variables
+        err_i = 0
+        err_n = int(np.ceil(self._iterations / err_ival))
+        half_rc = np.prod(self._rc) // 2
+
+        # diffraction
+        idx = range(np.prod(self.rc))
+
+        # object shape
+        height, width = obj.shape
+
+        # object estimation initial guess
+        obj_est = np.zeros((height, width), dtype=np.complex64)
+
+        # initialization for SSE errors
+        sse = np.zeros(err_n)
+
+        # holder variable for the guessed exit diffraction pattern
+        ext_diff_sse = None
+
+        # holder variable for the estimated object after some iterations
+        obj_est_n = np.zeros((err_n, height, width), dtype=np.complex64)
+
+        gau = gau_kern(self._probe, self.probe / np.sqrt(8 * np.log(2)),
+                normalize=False)
+
+        k = 0
+        while k < self._iterations:
+            if permute:
+                idx = np.random.permutation(idx)
+
+            for i in idx:
+                x_i, y_i = self._illu_pos[i]
+                x_loc = np.int(np.round((x_i - self._start[0]) / self._shift))
+                y_loc = np.int(np.round((y_i - self._start[1]) / self._shift))
+
+                # steps 1 - 7 from doi:10.1016/j.ultramic.2004.11.006
+                obj_g = obj_est[y_i:y_i+self._probe, x_i:x_i+self._probe]
+                ext_wave_g = obj_g * illu_func
+                ext_diff_g = fftshift(fft2(ext_wave_g))
+                ext_diff_c = diff_patterns[x_loc * self._rc[0] + y_loc] * \
+                    np.exp(1j * np.angle(ext_diff_g))
+                ext_wave_c = ifft2(ifftshift(ext_diff_c))
+                ext_wave_upd = obj_g + (ext_wave_c - ext_wave_g) \
+                    * illu_func.conj() \
+                    / ((1 - self._alpha) * np.max(np.abs(illu_func))**2 \
+                    + self._alpha * np.max(np.abs(illu_func))**2)
+                obj_est[y_i:y_i+self._probe, x_i:x_i+self._probe] = ext_wave_upd
+
+                # arbitrary
+                if x_loc * self._rc[0] + y_loc == half_rc:
+                    ext_diff_sse = ext_diff_g
+
+            if k % err_ival == 0:
+                err = np.abs(np.abs(diff_patterns[half_rc])**2
+                             - np.abs(ext_diff_sse)**2)
+                sse[err_i] = np.sum(np.sum(err**2)) / (height * width)
+                obj_est_n[err_i] = obj_est
+                err_i += 1
+
+            k += 1
+
+        def gamma(obj_est_n):
+            g_fac = np.sum(obj * obj_est_n.conj()) \
+                    / np.sum(np.abs(obj_est_n)**2)
+            return np.sum(np.abs(obj - g_fac * obj_est_n)**2) \
+                / np.sum(np.abs(obj)**2)
+
+        rms = np.array(list(map(gamma, obj_est_n)))
+
+        return obj_est, rms, sse
+
+
+def mpie(self, obj, illu_func, diff_patterns, **kwargs):
+        """
+        Args:
+            obj: Object
+            illu_func: Illumination function
+            illu_pos: Illumination positions for the probe across the object O
+            diff_patterns: Diffraction pattern
+            **kwargs: Arbitrary keyword arguments.
+        Returns:
+            Estimated object, root mean square error and sum of least squares error
+            of the estimate
+        """
+
+        # parameters
+        err_ival = kwargs.get('err_ival', 4)
+        permute = kwargs.get('permute', False)
+        T = 50
+        v = np.zeros(np.prod(self.rc) - T)
+
+
+        # loop temp variables
+        err_i = 0
+        err_n = int(np.ceil(self._iterations / err_ival))
+        half_rc = np.prod(self._rc) // 2
+
+        # diffraction
+        idx = range(np.prod(self.rc))
+
+        # object shape
+        height, width = obj.shape
+
+        # object estimation initial guess
+        obj_est = np.zeros((height, width), dtype=np.complex64)
+
+        # initialization for SSE errors
+        sse = np.zeros(err_n)
+
+        # holder variable for the guessed exit diffraction pattern
+        ext_diff_sse = None
+
+        # holder variable for the estimated object after some iterations
+        obj_est_n = np.zeros((err_n, height, width), dtype=np.complex64)
+
+        gau = gau_kern(self._probe, self.probe / np.sqrt(8 * np.log(2)),
+                normalize=False)
+
+        k = 0
+
+        while k < self._iterations:
+            if permute:
+                idx = np.random.permutation(idx)
+
+            for i in idx:
+                x_i, y_i = self._illu_pos[i]
+                x_loc = np.int(np.round((x_i - self._start[0]) / self._shift))
+                y_loc = np.int(np.round((y_i - self._start[1]) / self._shift))
+
+                # momentum update
+
+                # steps 1 - 7 from doi:10.1016/j.ultramic.2004.11.006
+                obj_g = obj_est[y_i:y_i+self._probe, x_i:x_i+self._probe]
+                ext_wave_g = obj_g * illu_func
+                ext_diff_g = fftshift(fft2(ext_wave_g))
+                ext_diff_c = diff_patterns[x_loc * self._rc[0] + y_loc] * \
+                    np.exp(1j * np.angle(ext_diff_g))
+                ext_wave_c = ifft2(ifftshift(ext_diff_c))
+                ext_wave_upd = obj_g + (ext_wave_c - ext_wave_g) \
+                    * illu_func.conj() \
+                    / ((1 - self._alpha) * np.max(np.abs(illu_func))**2 \
+                    + self._alpha * np.max(np.abs(illu_func))**2)
+                obj_est[y_i:y_i+self._probe, x_i:x_i+self._probe] = ext_wave_upd
+
+                # arbitrary
+                if x_loc * self._rc[0] + y_loc == half_rc:
+                    ext_diff_sse = ext_diff_g
+
+
+            if k % err_ival == 0:
+                err = np.abs(np.abs(diff_patterns[half_rc])**2
+                             - np.abs(ext_diff_sse)**2)
+                sse[err_i] = np.sum(np.sum(err**2)) / (height * width)
+                obj_est_n[err_i] = obj_est
+                err_i += 1
+
+
+            k += 1
+
+        def gamma(obj_est_n):
+            g_fac = np.sum(obj * obj_est_n.conj()) \
+                    / np.sum(np.abs(obj_est_n)**2)
+            return np.sum(np.abs(obj - g_fac * obj_est_n)**2) \
+                / np.sum(np.abs(obj)**2)
 
         rms = np.array(list(map(gamma, obj_est_n)))
 

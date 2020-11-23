@@ -12,43 +12,83 @@ if __name__ == '__main__':
 
     from beams.GaussianLaguerreBeams import ModifiedGaussLaguerreModeSet as modGLM
     from common.constants import c, pi, j
+    from utils.filters import gau_kern
 
     plt.style.use('mint')
 
-    mod_beam = modGLM(w0=.5, k=.5, maxP=6, maxL=6)
+    mod_beam = modGLM(w0=80, k=5, maxP=6, maxL=6)
 
     width = 80
-    zz_nf = 1.0
+    zz_nf = 0.5
     zz_ff = 1000
-    xx, yy = np.meshgrid(np.mgrid[-5:5:width*j], np.mgrid[-5:5:width*j]);
+    xx, yy = np.meshgrid(np.mgrid[-20:20:width*j], np.mgrid[-20:20:width*j]);
     rr = np.sqrt(xx**2 + yy**2);
     theta = np.arcsin(rr / zz_ff)
     phi = np.arctan2(yy, xx);
 
     c = np.zeros(mod_beam.shape)
-    c[0][0] = 1.0
-
+    c[1, 2] = 0.5
     u_nf = mod_beam.near_field(rr, phi, zz_nf, c)
     u_ff = mod_beam.far_field(theta, phi, zz_ff, c)
 
-    width, height = plt.figaspect(1.25)
+    fig1, axes1 = plt.subplots(1, 2)
+    ax1, ax2 = axes1.ravel()
+    ax1.set_title(r'Amplitude')
+    ax1.set_axis_off()
+    ax1.imshow(np.abs(u_ff), cmap='RdBu')
+    ax2.set_title('Phase')
+    ax2.set_axis_off()
+    ax2.imshow(np.angle(u_ff), cmap='RdBu')
 
-    fig1, ax1 = plt.subplots(figsize=(width, height), dpi=96)
-    fig2, ax2 = plt.subplots(figsize=(width, height), dpi=96)
+    c = np.zeros(mod_beam.shape)
+    c[2, 3] = 1.0
+    u_ff = mod_beam.near_field(rr, phi, zz_ff, c)
+    u_ff = mod_beam.far_field(theta, phi, zz_ff, c)
 
-    fig3, ax3 = plt.subplots(figsize=(width, height), dpi=96)
-    fig4, ax4 = plt.subplots(figsize=(width, height), dpi=96)
+    fig2, axes2 = plt.subplots(1, 2)
+    ax3, ax4 = axes2.ravel()
+    ax3.set_title(r'Amplitude')
+    ax3.set_axis_off()
+    ax3.imshow(np.abs(u_ff), cmap='RdBu')
+    ax4.set_title('Phase')
+    ax4.set_axis_off()
+    ax4.imshow(np.angle(u_ff), cmap='RdBu')
 
-    ax1.set_title('Near field amplitude')
-    ax1.imshow(np.abs(u_nf)**2, cmap='RdBu')
+    c = np.zeros(mod_beam.shape)
+    c[3, 4] = 1.0
+    u_ff = mod_beam.near_field(rr, phi, zz_ff, c)
+    u_ff = mod_beam.far_field(theta, phi, zz_ff, c)
 
-    ax2.set_title('Near field phase')
-    ax2.imshow(np.angle(u_nf)**2, cmap='RdBu')
+    fig3, axes3 = plt.subplots(1, 2)
+    ax5, ax6 = axes3.ravel()
+    ax5.set_title(r'Amplitude')
+    ax5.set_axis_off()
+    ax5.imshow(np.abs(u_ff), cmap='RdBu')
+    ax6.set_title('Phase')
+    ax6.set_axis_off()
+    ax6.imshow(np.angle(u_ff), cmap='RdBu')
 
-    ax3.set_title('Far field amplitude')
-    ax3.imshow(np.abs(u_ff)**2, cmap='RdBu')
+    c = np.zeros(mod_beam.shape)
+    c[4, 5] = 1.0
+    u_ff = mod_beam.near_field(rr, phi, zz_ff, c)
+    u_ff = mod_beam.far_field(theta, phi, zz_ff, c)
 
-    ax4.set_title('Far field phase')
-    ax4.imshow(np.angle(u_ff)**2, cmap='RdBu')
+    fig4, axes4 = plt.subplots(1, 2)
+    ax7, ax8 = axes4.ravel()
+    ax7.set_title(r'Amplitude')
+    ax7.set_axis_off()
+    ax7.imshow(np.abs(u_ff), cmap='RdBu')
+    ax8.set_title('Phase')
+    ax8.set_axis_off()
+    ax8.imshow(np.angle(u_ff), cmap='RdBu')
+
+    fig1.savefig('ff_gl12.png', bbox_inches='tight',
+                 pad_inches=0, transparent=False)
+    fig2.savefig('ff_gl23.png', bbox_inches='tight',
+                 pad_inches=0, transparent=False)
+    fig3.savefig('ff_gl34.png', bbox_inches='tight',
+                 pad_inches=0, transparent=False)
+    fig4.savefig('ff_gl45.png', bbox_inches='tight',
+                 pad_inches=0, transparent=False)
 
     plt.show()

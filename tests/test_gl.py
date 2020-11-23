@@ -10,35 +10,77 @@ if __name__ == '__main__':
     import numpy as np
     import matplotlib.pyplot as plt
 
+    from common.constants import j
     from beams.GaussianLaguerreBeams import GaussLaguerreModeSet as GLM
-    from common.constants import c, pi, j
 
     plt.style.use('mint')
 
-    beam = GLM(w0=.1, k=1.0, maxP=6, maxL=6)
-
+    beam = GLM(w0=80, k=5.0, maxP=6, maxL=6)
+    zz = 5.0
     width = 80
-
-    # Calculate the cylindrical coordinates
-    zz = 1.0
-    xx, yy = np.meshgrid(np.mgrid[-10:10:width*j], np.mgrid[-10:10:width*j]);
-    rr = np.sqrt(xx**2 + yy**2);
-    phi = np.arctan2(yy, xx);
+    xx, yy = np.meshgrid(np.mgrid[-20:20:width*j], np.mgrid[-20:20:width*j])
+    rr = np.sqrt(xx**2 + yy**2)
+    phi = np.arctan2(yy, xx)
 
     c = np.zeros(beam.shape)
-    c[2][0] = 1.0
-
+    c[1, 2] = 1.0
     u = beam.field(rr, phi, zz, c)
 
-    width, height = plt.figaspect(1.25)
-
-    fig1, ax1 = plt.subplots(figsize=(width, height), dpi=96)
-    fig2, ax2 = plt.subplots(figsize=(width, height), dpi=96)
-
-    ax1.set_title('Field amplitude')
+    fig1, axes1 = plt.subplots(1, 2)
+    ax1, ax2 = axes1.ravel()
+    ax1.set_title(r'Amplitude')
+    ax1.set_axis_off()
     ax1.imshow(np.abs(u), cmap='RdBu')
-
-    ax2.set_title('Field phase')
+    ax2.set_title('Phase')
+    ax2.set_axis_off()
     ax2.imshow(np.angle(u), cmap='RdBu')
+
+    c = np.zeros(beam.shape)
+    c[2, 3] = 1.0
+    u = beam.field(rr, phi, zz, c)
+
+    fig2, axes2 = plt.subplots(1, 2)
+    ax3, ax4 = axes2.ravel()
+    ax3.set_title(r'Amplitude')
+    ax3.set_axis_off()
+    ax3.imshow(np.abs(u), cmap='RdBu')
+    ax4.set_title('Phase')
+    ax4.set_axis_off()
+    ax4.imshow(np.angle(u), cmap='RdBu')
+
+    c = np.zeros(beam.shape)
+    c[3, 4] = 1.0
+    u = beam.field(rr, phi, zz, c)
+
+    fig3, axes3 = plt.subplots(1, 2)
+    ax5, ax6 = axes3.ravel()
+    ax5.set_title(r'Amplitude')
+    ax5.set_axis_off()
+    ax5.imshow(np.abs(u), cmap='RdBu')
+    ax6.set_title('Phase')
+    ax6.set_axis_off()
+    ax6.imshow(np.angle(u), cmap='RdBu')
+
+    c = np.zeros(beam.shape)
+    c[4, 5] = 1.0
+    u = beam.field(rr, phi, zz, c)
+
+    fig4, axes4 = plt.subplots(1, 2)
+    ax7, ax8 = axes4.ravel()
+    ax7.set_title(r'Amplitude')
+    ax7.set_axis_off()
+    ax7.imshow(np.abs(u), cmap='RdBu')
+    ax8.set_title('Phase')
+    ax8.set_axis_off()
+    ax8.imshow(np.angle(u), cmap='RdBu')
+
+    fig1.savefig('gl12.png', bbox_inches='tight',
+                 pad_inches=0, transparent=False)
+    fig2.savefig('gl23.png', bbox_inches='tight',
+                 pad_inches=0, transparent=False)
+    fig3.savefig('gl34.png', bbox_inches='tight',
+                 pad_inches=0, transparent=False)
+    fig4.savefig('gl45.png', bbox_inches='tight',
+                 pad_inches=0, transparent=False)
 
     plt.show()

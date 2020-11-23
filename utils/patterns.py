@@ -30,7 +30,7 @@ def get_gradation_2d(width=256, height=256, start=0,
     if is_horizontal:
         return np.tile(np.linspace(start, stop, width), (height, 1))
 
-    return np.tile(np.linspace(start, stop, height), (width, 1)).T
+    return np.tile(np.linspace(start, stop, height), (width, 1)).T.astype(np.int)
 
 
 def get_gradation_3d(width, height, start_list, stop_list, is_horizontal_list):
@@ -57,7 +57,7 @@ def get_gradation_3d(width, height, start_list, stop_list, is_horizontal_list):
         result[:, :, i] = get_gradation_2d(width, height, start, stop,
                                            is_horizontal)
 
-    return result
+    return result.astype(np.uint8)
 
 
 def stripes(gap, stripe_width, width, height, horizontal=True):
@@ -79,23 +79,18 @@ def stripes(gap, stripe_width, width, height, horizontal=True):
 
     while current_col < width:
         if current_col + stripe_width + gap <= width-1:
-            if horizontal:
-                canvas[current_col:current_col+stripe_width, :] = 1.0
-            else:
-                canvas[:, current_col:current_col+stripe_width] = 1.0
+            canvas[:, current_col:current_col+stripe_width] = 1.0
             current_col += stripe_width + gap
         elif current_col + stripe_width <= width-1:
-            if horizontal:
-                canvas[current_col:current_col+stripe_width, :] = 1.0
-            else:
-                canvas[:, current_col:current_col+stripe_width] = 1.0
+            canvas[:, current_col:current_col+stripe_width] = 1.0
             current_col = width
         else:
-            if horizontal:
-                canvas[current_col:, :] = 1
-            else:
-                canvas[:, current_col:] = 1
+            canvas[:, current_col:] = 1
             current_col = width
+
+    if horizontal:
+        canvas = np.rot90(canvas)
+
     return canvas
 
 
@@ -122,4 +117,4 @@ def checkerboard(board_sz, square_sz):
     board = np.pad(zeros_ones, int((board_sz**2)/2 - square_sz), 'wrap') \
         .reshape((board_sz, board_sz))
 
-    return (board + board.T == 1).astype(int)
+    return (board + board.T == 1).astype(np.uint8)

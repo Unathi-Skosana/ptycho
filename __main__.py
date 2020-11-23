@@ -1,8 +1,20 @@
 
 if __name__ == "__main__":
-    from skimage.io import imread, imsave
-    from skimage.transform import resize
+    import numpy as np
+    import matplotlib.pyplot as plt
 
-    im = imread('images/USAF_Resolution_Chart_A2-780.jpg')
-    im_resize = resize(im, (256, 256), anti_aliasing=True)
-    imsave('images/USAF_Resolution_Chart_A2-256.tiff', im_resize)
+    #As a path collection
+
+    from matplotlib.collections import LineCollection
+
+    # In polar coordinates
+    fig, ax = plt.subplots(subplot_kw=dict(polar=True, facecolor='none'))
+    r = np.arange(0, 3.4, 0.01)
+    theta = 2*np.pi*r
+    ax.set_axis_off()
+    ax.grid(False)
+    ax.axes.get_xaxis().set_visible(False)
+    ax.axes.get_yaxis().set_visible(False)
+    ax.plot(theta, r, linewidth=2, color='k');
+
+    plt.show()
