@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     fig1.savefig('rpie_gh.png', bbox_inches='tight',
                  pad_inches=0, transparent=False)
-    fig2.savefig('rpie_gh_rms.png', bbox_inches='tight',
+    fig2.savefig('rpie_gl_rms.png', bbox_inches='tight',
                  pad_inches=0, transparent=False)
 
     plt.show()

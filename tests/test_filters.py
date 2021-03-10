@@ -1,25 +1,30 @@
-import sys
-import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
-
-from mpl_toolkits.axes_grid1 import ImageGrid
-from skimage import img_as_float
-from skimage.io import imread
-from skimage.transform import resize
-from numpy import pi
-from scipy.fft import fft2, ifft2, fft, ifft, fftshift, ifftshift
-
-from utils.filters import gau_kern
-from utils.aberrations import c_lpf, \
-    inc_lpf, zernike_modes, \
-    c_abber, inc_abber
-
-plt.style.use('mint')
-
 if __name__ == "__main__":
-    im_path = sys.argv[1]
-    im = img_as_float(imread(im_path, as_gray=True))
+    import argparse
+    import numpy as np
+    import matplotlib
+    import matplotlib.pyplot as plt
+
+    from mpl_toolkits.axes_grid1 import ImageGrid
+    from skimage import img_as_float
+    from skimage.io import imread
+    from skimage.transform import resize
+    from numpy import pi
+    from scipy.fft import fft2, ifft2, fft, ifft, fftshift, ifftshift
+
+    from utils.filters import gau_kern
+    from utils.aberrations import c_lpf, \
+        inc_lpf, zernike_modes, \
+        c_abber, inc_abber
+
+    plt.style.use('mint')
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("-i", "--image", 
+                        default="images/cameraman.tif",
+                        help="Sample image")
+    ARGS = parser.parse_args()
+
+    im = img_as_float(imread(ARGS.image, as_gray=True))
     im = resize(im, (256, 256), anti_aliasing=True)
     im_amp = np.sqrt(im)
     im_ft = fftshift(fft2(im_amp))

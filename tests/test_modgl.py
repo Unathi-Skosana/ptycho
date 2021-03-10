@@ -16,12 +16,11 @@ if __name__ == '__main__':
 
     plt.style.use('mint')
 
-    mod_beam = modGLM(w0=80, k=5, maxP=6, maxL=6)
-
+    mod_beam = modGLM(w0=.5, k=.5, maxP=6, maxL=6)
     width = 80
-    zz_nf = 0.5
-    zz_ff = 1000
-    xx, yy = np.meshgrid(np.mgrid[-20:20:width*j], np.mgrid[-20:20:width*j]);
+    zz_nf = 0.1
+    zz_ff = 50
+    xx, yy = np.meshgrid(np.mgrid[-10:10:width*j], np.mgrid[-10:10:width*j]);
     rr = np.sqrt(xx**2 + yy**2);
     theta = np.arcsin(rr / zz_ff)
     phi = np.arctan2(yy, xx);

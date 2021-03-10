@@ -13,7 +13,6 @@ from scipy.fft import fft2, ifft2, fftshift, ifftshift
 from itertools import chain, product
 from utils.filters import gau_kern
 
-
 class PytchoSimulatorBase():
     """
     The base class of a ptychography simulator, holding the various
