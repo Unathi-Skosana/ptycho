@@ -37,7 +37,7 @@ def gau_kern(dim, std, normalize=False):
     return gauss_2d
 
 
-def circ_mask(dim, center, radius, val=1):
+def circ_mask(dim, center, radius, val=1, inverse=True):
     '''
     Generates an dim x dim circular mask centered at c with radius r
 
@@ -53,7 +53,11 @@ def circ_mask(dim, center, radius, val=1):
     c_x, c_y = center
     g_y, g_x = np.ogrid[-c_x:dim-c_x, -c_y:dim-c_y]
     mask = g_x*g_x + g_y*g_y <= radius*radius
-    arr = np.zeros((dim, dim))
-    arr[mask] = val
-
+    arr = None
+    if inverse:
+        arr = np.full((dim, dim), val)
+        arr[mask] = 0
+    else:
+        arr = np.zeros((dim, dim))
+        arr[mask] = val
     return arr

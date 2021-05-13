@@ -1,3 +1,3 @@
 # Ptycho
 
-A small seminar project I worked on a few concepts from ptychography during my MSc.
+A small seminar project on a few concepts from ptychography.

@@ -8,6 +8,7 @@ Description:
 
 import numpy as np
 
+from skimage.exposure import rescale_intensity
 from joblib import Parallel, delayed
 from scipy.fft import fft2, ifft2, fftshift, ifftshift
 from itertools import chain, product
@@ -249,7 +250,7 @@ class PytchoSimulator(PytchoSimulatorBase):
 
         # parameters
         hold = kwargs.get('hold', 1)
-        err_ival = kwargs.get('err_ival', 4)
+        err_ival = kwargs.get('err_ival', 1)
         permute = kwargs.get('permute', False)
 
         # loop temp variables
@@ -292,7 +293,7 @@ class PytchoSimulator(PytchoSimulatorBase):
                 # steps 1 - 7 from doi:10.1016/j.ultramic.2004.11.006
                 obj_g = obj_est[y_i:y_i+self._probe, x_i:x_i+self._probe]
                 obj_g_cpy = np.copy(obj_g)
-                ext_wave_g = illu_func_est * obj_g
+                ext_wave_g = obj_g * illu_func_est
                 ext_diff_g = fftshift(fft2(ext_wave_g))
                 ext_diff_c = diff_patterns[x_loc * self.rc[0] + y_loc] \
                     * np.exp(1j * np.angle(ext_diff_g))
@@ -347,7 +348,6 @@ class PytchoSimulator(PytchoSimulatorBase):
         # parameters
         err_ival = kwargs.get('err_ival', 4)
         permute = kwargs.get('permute', False)
-
 
         # loop temp variables
         err_i = 0
@@ -522,6 +522,7 @@ def mpie(self, obj, illu_func, diff_patterns, **kwargs):
             illu_func: Illumination function
             illu_pos: Illumination positions for the probe across the object O
             diff_patterns: Diffraction pattern
+
             **kwargs: Arbitrary keyword arguments.
         Returns:
             Estimated object, root mean square error and sum of least squares error
@@ -590,7 +591,6 @@ def mpie(self, obj, illu_func, diff_patterns, **kwargs):
                 # arbitrary
                 if x_loc * self._rc[0] + y_loc == half_rc:
                     ext_diff_sse = ext_diff_g
-
 
             if k % err_ival == 0:
                 err = np.abs(np.abs(diff_patterns[half_rc])**2
