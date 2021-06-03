@@ -1,20 +1,23 @@
+import cv2
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import ImageGrid
 
 from numpy import pi
-
 from utils import stripes, get_gradation_2d,\
-        get_gradation_3d, checkerboard
+        get_gradation_3d, checkerboard, radial_gradient
+from utils.filters import gau_kern, circ_mask
+from skimage.color import rgb2gray
+from skimage import img_as_float
 
 if __name__ == "__main__":
+    cmask = circ_mask(70, (35, 35), 35, 0)
     im1 = stripes(32, 45, 256, 256, horizontal=False)
     im2 = get_gradation_2d(256, 256, 0, 255, is_horizontal=False)
     im3 = checkerboard(256, 64)
     im4 = stripes(32, 45, 256, 256, horizontal=True)
-    im5 = get_gradation_3d(256, 256, (0, 126, 0),
-            (126, 255, 255), (True, True, False))
+    im5 = rgb2gray(radial_gradient(70, 70))
 
     fig = plt.figure()
     grid = ImageGrid(fig, 111,  # similar to subplot(111)

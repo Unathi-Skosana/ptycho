@@ -16,8 +16,8 @@ if __name__ == '__main__':
 
     plt.style.use('mint')
 
-    mod_beam = modGLM(w0=.5, k=.5, maxP=6, maxL=6)
-    width = 80
+    mod_beam = modGLM(w0=10e-3, k=10e9, maxP=6, maxL=6)
+    width = 70
     zz_nf = 0.1
     zz_ff = 50
     xx, yy = np.meshgrid(np.mgrid[-10:10:width*j], np.mgrid[-10:10:width*j]);

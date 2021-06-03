@@ -8,6 +8,28 @@ Description:
 
 import numpy as np
 
+def radial_gradient(width=256, height=256, start_color=(0,0,0),
+        end_color=(255, 255, 255)):
+
+    arr = np.zeros((width,height,3), dtype=np.uint8)
+    imgsize = arr.shape[:2]
+
+    for y in range(imgsize[1]):
+        for x in range(imgsize[0]):
+            #Find the distance to the center
+            distanceToCenter = np.sqrt((x - imgsize[0]//2) ** 2 + (y - imgsize[1]//2) ** 2)
+
+            #Make it on a scale from 0 to 1innerColor
+            distanceToCenter = distanceToCenter / (np.sqrt(2) * imgsize[0]/2)
+
+            #Calculate r, g, and b values
+            r = end_color[0] * distanceToCenter + start_color[0] * (1 - distanceToCenter)
+            g = end_color[1] * distanceToCenter + start_color[1] * (1 - distanceToCenter)
+            b = end_color[2] * distanceToCenter + start_color[2] * (1 - distanceToCenter)
+            # print r, g, b
+            arr[y, x] = (int(r), int(g), int(b))
+
+    return arr
 
 def get_gradation_2d(width=256, height=256, start=0,
                      stop=255, is_horizontal=False):

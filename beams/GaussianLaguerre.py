@@ -27,7 +27,7 @@ def beam_curv(z, z0):
     Returns:
         radius of curvature
     """
-    return z + z0**2 / z
+    return z *(1 + (z0 / z)**2)
 
 
 def beam_rad(z, w0, z0):
@@ -59,7 +59,7 @@ def rayleigh_range(w0, k):
         rayleigh range
     """
 
-    return k * w0**2
+    return 0.5 * k * w0**2
 
 
 def phi0(z, z0):
@@ -128,8 +128,12 @@ def amplitude(r, z, k, w0, p=0, l=0):
     z0 = rayleigh_range(w0, k)
     w = beam_rad(z, w0, z0)
     a = alpha(r, w)
+    R = beam_curv(z, z0)
+    FF = np.sqrt(1 + (r / R)**2)
+    a = np.sqrt(2) * r / (w * FF)
+    cosTh = 1.0/FF
 
-    return w0 / w * a**abs(l) * lag_pl(a**2, p, l)
+    return (1 + cosTh) / 2 * 1/(k * w *FF) * a**abs(l) * lag_pl(a**2, p, abs(l))
 
 
 def phase(r, phi, z, k, w0, p=0, l=0):
@@ -153,11 +157,14 @@ def phase(r, phi, z, k, w0, p=0, l=0):
     w = beam_rad(z, w0, z0)
     R = beam_curv(z, z0)
     a = alpha(r, w)
+    FF = np.sqrt(1 + (r / R)**2)
+    a = np.sqrt(2) * r / (w * FF)
 
-    return exp(- a**2 / 2 - j * k * r**2 / 2 / R
-               - j * k * z
-               + (2 * p + abs(l) + 1) * phi0(z, z0)
-               - j * l * phi)
+    return exp(- (a**2) / 2 
+               - 1j * k * R * (FF - 1)
+               - 1j * k * z
+               + 1j * (2 * p + abs(l) + 1) * phi0(z, z0)
+               + 1j * l * phi)
 
 
 def gauss_lag_modes(r, phi, z, k, w0, p=0, l=0):

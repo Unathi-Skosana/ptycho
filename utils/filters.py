@@ -56,7 +56,7 @@ def circ_mask(dim, center, radius, val=1, inverse=True):
     arr = None
     if inverse:
         arr = np.full((dim, dim), val)
-        arr[mask] = 0
+        arr[mask] = 0.0
     else:
         arr = np.zeros((dim, dim))
         arr[mask] = val
