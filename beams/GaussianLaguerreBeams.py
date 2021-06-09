@@ -91,8 +91,8 @@ class GaussLaguerreModeSet(GaussLaguerreModeBase):
 
         for p in range(coeffs.shape[0]):
             for l in range(coeffs.shape[1]):
-                result += coeffs[p, l] * GLM(r, phi, z, self.w0,
-                                             self.k, p=p, l=l)
+                result += coeffs[p, l] * GLM(r, phi, z, self.k,
+                                             self.w0, p=p, l=l)
         return result
 
 
@@ -129,8 +129,8 @@ class ModifiedGaussLaguerreModeSet(GaussLaguerreModeBase):
         result = np.zeros_like(r, dtype=np.complex64)
         for p in range(coeffs.shape[0]):
             for l in range(coeffs.shape[1]):
-                result += coeffs[p, l] * modGLM_nf(r, phi, z, self.w0,
-                                                   self.k, p=p, l=l)
+                result += coeffs[p, l] * modGLM_nf(r, phi, z, self.k,
+                                                   self.w0, p=p, l=l)
         return result
 
     def far_field(self, theta, phi, z, coeffs):
@@ -157,6 +157,6 @@ class ModifiedGaussLaguerreModeSet(GaussLaguerreModeBase):
         result = np.zeros_like(theta, dtype=np.complex64)
         for p in range(coeffs.shape[0]):
             for l in range(coeffs.shape[1]):
-                result += coeffs[p, l] * modGLM_ff(theta, phi, z, self.w0,
-                                                   self.k, p=p, l=l)
+                result += coeffs[p, l] * modGLM_ff(theta, phi, z, self.k,
+                                                   self.w0, p=p, l=l)
         return result

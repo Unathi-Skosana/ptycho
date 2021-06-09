@@ -7,7 +7,6 @@ Description:
     Adapted from https://github.com/PaulKGrimes/GaussianBeams/blob/master/GaussianLaguerreModes.py
 """
 
-
 from math import factorial
 from numpy import pi,  sqrt, arctan, exp
 from scipy.special import eval_genlaguerre
@@ -27,6 +26,9 @@ def beam_curv(z, z0):
     Returns:
         radius of curvature
     """
+    if z == 0:
+        return np.Inf
+
     return z *(1 + (z0 / z)**2)
 
 
@@ -43,7 +45,7 @@ def beam_rad(z, w0, z0):
         radius at which the amplitude fall to 1/e
     """
  
-    return w0 * sqrt(1 + (z/z0)**2)
+    return w0 * sqrt(1 + (z / z0)**2)
 
 
 def rayleigh_range(w0, k):
@@ -88,8 +90,22 @@ def alpha(r, w):
         dimensionless parameter
     """
 
-    return np.sqrt(2) * r / w
+    return sqrt(2) * r / w
 
+def scale(r, z, z0):
+    """
+    Computes dimensionless parameter involving the radial distance and the beam
+    curvature for calculation convenience in the near field. (F'' in  Tuovinen)
+
+    Args:
+        r: radial distance from the center axis of the beam
+        z: axial distance from beam's waist
+        z0: rayleigh range
+    """
+
+    R = beam_curv(z, z0)
+
+    return sqrt(1 + (r / R)**2)
 
 def lag_pl(x, p=0, l=0, normalize=True):
     """
@@ -128,12 +144,11 @@ def amplitude(r, z, k, w0, p=0, l=0):
     z0 = rayleigh_range(w0, k)
     w = beam_rad(z, w0, z0)
     a = alpha(r, w)
-    R = beam_curv(z, z0)
-    FF = np.sqrt(1 + (r / R)**2)
-    a = np.sqrt(2) * r / (w * FF)
-    cosTh = 1.0/FF
+    FF = scale(r, z, z0)
+    a /= FF
 
-    return (1 + cosTh) / 2 * 1/(k * w *FF) * a**abs(l) * lag_pl(a**2, p, abs(l))
+    return np.array((1.0 + 1.0/FF) / 2.0 * 1/(k * w *FF) * a**abs(l) *
+            lag_pl(a**2, p, abs(l)), dtype=np.float128)
 
 
 def phase(r, phi, z, k, w0, p=0, l=0):
@@ -157,14 +172,14 @@ def phase(r, phi, z, k, w0, p=0, l=0):
     w = beam_rad(z, w0, z0)
     R = beam_curv(z, z0)
     a = alpha(r, w)
-    FF = np.sqrt(1 + (r / R)**2)
-    a = np.sqrt(2) * r / (w * FF)
+    FF = scale(r, z, z0)
+    a /= FF
 
-    return exp(- (a**2) / 2 
+    return np.array(exp(-a**2 / 2.0
                - 1j * k * R * (FF - 1)
                - 1j * k * z
                + 1j * (2 * p + abs(l) + 1) * phi0(z, z0)
-               + 1j * l * phi)
+               - 1j * l * phi), dtype=np.complex128)
 
 
 def gauss_lag_modes(r, phi, z, k, w0, p=0, l=0):

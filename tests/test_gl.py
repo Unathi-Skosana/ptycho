@@ -10,49 +10,87 @@ if __name__ == '__main__':
     import numpy as np
     import matplotlib.pyplot as plt
     from skimage.restoration import unwrap_phase
+    from skimage.exposure import rescale_intensity
+    from mpl_toolkits.axes_grid1 import ImageGrid
 
     from common.constants import j
     from beams.GaussianLaguerreBeams import GaussLaguerreModeSet as GLM
+    from utils.filters import circ_mask
 
     plt.style.use('mint')
 
-    grid_size = 10e6
-    wavelength = 624*10e-9
-    w0 = 3*10e-6
+    wavelength = 624 * 1e-9
+    k = 2 * np.pi / wavelength
+    w0 = 3 * 1e-6
     N = 256
-    dx = grid_size / N
 
-    w = N
-    cx = int(w/2)
-    xvals = dx * np.arange(-cx, (w-cx))
+    L = 20 * 1e-6
+    x0 = np.linspace(-L/2, L/2, N)
+    y0 = np.linspace(-L/2, L/2, N)
+    xv, yv = np.meshgrid(x0, y0)
+    zz = 1*1e-9
 
-    h = N
-    cy = int(h/2)
-    yvals = dx * np.arange(-cy, (h-cy))
+    beam = GLM(w0 = w0, k = k, maxP=8, maxL=8)
+    rr = np.sqrt(xv**2 + yv**2)
+    phi = np.arctan2(yv, xv)
 
-    Y, X = np.mgrid[:h, :w]
-    Y = (Y-cy) * dx
-    X = (X-cx) * dx
-
-    zz = 1*10e-6
-
-    beam = GLM(w0=w0, k = 2 * np.pi / wavelength, maxP=6, maxL=6)
-    rr = np.sqrt(X**2 + Y**2)
-    phi = np.arctan2(Y, X)
+    cmask = circ_mask(70, (70//2, 70//2), 35, 1.0, inverse=False)
 
     c = np.zeros(beam.shape)
-    c[2, 8]= 1
-    u = beam.field(rr, phi, zz, c)
+    c[0, 0] = 1.0
+    u1 = beam.field(rr, phi, zz, c)
+    c[0, 0] = 0.0
+    c[1, 0] = 1.0
+    u2 = beam.field(rr, phi, zz, c)
+    c[1, 0] = 0.0
+    c[2, 0] = 1.0
+    u3 = beam.field(rr, phi, zz, c)
+    c[2, 0] = 0.0
+    c[0, 1] = 1.0
+    u4 = beam.field(rr, phi, zz, c)
+    c[0, 1] = 0.0
+    c[1, 1] = 1.0
+    u5 = beam.field(rr, phi, zz, c)
+    c[1, 1] = 0.0
+    c[2, 1] = 1.0
+    u6 = beam.field(rr, phi, zz, c)
+    c[2, 1] = 0.0
+    c[0, 2] = 1.0
+    u7 = beam.field(rr, phi, zz, c)
+    c[0, 2] = 0.0
+    c[1, 2] = 1.0
+    u8 = beam.field(rr, phi, zz, c)
+    c[1, 2] = 0.0
+    c[2, 2] = 1.0
+    u9 = beam.field(rr, phi, zz, c)
 
-    fig1, axes1 = plt.subplots(1, 2)
-    ax1, ax2 = axes1.ravel()
+    rr[rr < 1*1e-6] = 0
+    print(rr)
 
-    ax1.set_title(r'Amplitude')
-    ax1.set_axis_off()
-    ax1.imshow(np.abs(u), cmap='RdBu')
+    fig = plt.figure(figsize=(25, 25))
+    grid = ImageGrid(fig,
+            111,  # similar to subplot(111)
+            nrows_ncols=(3, 6),  # creates 2x2 grid of axes
+            axes_pad=0.05,  # pad between axes in inch.
+    )
 
-    ax2.set_title('Phase')
-    ax2.set_axis_off()
-    ax2.imshow(unwrap_phase(np.angle(u)), cmap='RdBu')
+    i = 0
+    for ax, im in zip(grid, [np.abs(u1), np.angle(u1), np.abs(u2), np.angle(u2),
+        np.abs(u3), np.angle(u3), np.abs(u4), np.angle(u4), np.abs(u5),
+        np.angle(u5), np.abs(u6), np.angle(u6), np.abs(u7), np.angle(u7),
+        np.abs(u8), np.angle(u8), np.abs(u9), np.angle(u9)]):
 
+        if i % 2 == 0 and i < 6:
+            ax.set_title(r"$p = {}$".format(i//2), size=40, loc='right', x=1.20)
+
+        if i % 3 == 0:
+            ax.set_ylabel(r"$l = {}$".format(i//6), size=40)
+
+        ax.set_yticks([])
+        ax.set_xticks([])
+
+        ax.imshow(im, cmap="RdBu")
+        i += 1
+    fig.savefig('GLM.png', bbox_inches='tight',
+                  pad_inches=0, transparent=False)
     plt.show()

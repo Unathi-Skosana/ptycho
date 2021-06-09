@@ -104,7 +104,6 @@ def alpha_ff(theta, w0, k):
 
     return sqrt(2) * k * w0 * sin(theta)
 
-
 def scale(r, z, z0):
     """
     Computes dimensionless parameter involving the radial distance and the beam
@@ -119,7 +118,6 @@ def scale(r, z, z0):
     R = beam_curv(z, z0)
 
     return sqrt(1 + (r / R)**2)
-
 
 def lag_pl(x, p=0, l=0, normalize=True):
     """
