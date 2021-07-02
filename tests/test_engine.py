@@ -40,43 +40,31 @@ if __name__ == "__main__":
     ptycho = PytchoSimulator(alpha=0.25, beta=1.0, probe=70,
                              start=(20, 20), shift=5, rc=(30, 30),
                              iterations=50)
-    wavelength = 624*1e-9
+
+    wavelength = 624 * 1e-9
     k = 2 * np.pi / wavelength
-    grid_size = 30 / wavelength
-    w0 = 100 * wavelength
+    w0 = 20 * 1e-6
+
     N = 70
-    dx = grid_size / N
-
-    w = N
-    cx = int(w/2)
-
-    h = N
-    cy = int(h/2)
-
-    Y, X = np.mgrid[:h, :w]
-    Y = (Y-cy) * dx
-    X = (X-cx) * dx
-
+    L = 100 * 1e-6
+    x0 = np.linspace(-L/2, L/2, N)
+    y0 = np.linspace(-L/2, L/2, N)
+    xv, yv = np.meshgrid(x0, y0)
     zz = 1*1e-9
 
-    beam = GLM(w0 = w0, k = k, maxP=8, maxL=8)
-    rr = np.sqrt(X**2 + Y**2)
-    phi = np.arctan2(Y, X)
+    beam = GLM(w0=w0, k=k, maxP=8, maxL=8)
+    rr = np.sqrt(xv**2 + yv**2)
+    phi = np.arctan2(yv, xv)
+
+    cmask = circ_mask(N, (N//2, N//2), N//2, 1.0, inverse=False)
 
     c = np.zeros(beam.shape)
     c[2, 2] = 1.0
     u1 = beam.field(rr, phi, zz, c)
-
-    cmask = circ_mask(70, (70//2, 70//2), 35, 1.0, inverse=False)
     u1 = (np.abs(u1) * cmask) * np.exp(1j *
             (rescale_intensity(np.angle(u1) * cmask, out_range=(0, 1.0))))
 
-    c = np.zeros(beam.shape)
-    c[0, 0] = 1.0
-    u2 = beam.field(rr, phi, zz, c)
-    u2 = np.abs(u2)
-
-    diff_patterns = ptycho.diffract(obj, u1, mode="poisson", mean=500)
+    diff_patterns = ptycho.diffract(obj, u1) 
     err_ival = 1
 
     obj_est, illu_func_est, RMS, R_factor = ptycho.repie(obj, diff_patterns,
@@ -110,7 +98,6 @@ if __name__ == "__main__":
     fig5, ax5 = plt.subplots()
     cax5 = ax5.imshow(rescale_intensity(np.angle(illu_func_est), out_range=(-np.pi, np.pi)),
             cmap='gray', vmin=-np.pi, vmax=np.pi)
-
     ax5.set_axis_off()
 
     fig6, ax6 = plt.subplots()
@@ -123,5 +110,9 @@ if __name__ == "__main__":
             cmap='gray', vmin=-np.pi, vmax=np.pi)
     ax7.set_axis_off()
 
+    fig0.savefig('v30_obj_ampl.png')
+    fig1.savefig('v30_obj_phase.png')
+    fig4.savefig('v30_probe_ampl.png')
+    fig5.savefig('v30_probe_phase.png')
 
     plt.show()

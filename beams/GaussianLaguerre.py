@@ -29,7 +29,7 @@ def beam_curv(z, z0):
     if z == 0:
         return np.Inf
 
-    return z *(1 + (z0 / z)**2)
+    return z  + z0**2 / z
 
 
 def beam_rad(z, w0, z0):
@@ -75,7 +75,7 @@ def phi0(z, z0):
         gouy phase
     """
 
-    return arctan(z / z0)
+    return arctan(z / z0) + np.pi
 
 
 def alpha(r, w):
@@ -147,7 +147,7 @@ def amplitude(r, z, k, w0, p=0, l=0):
     FF = scale(r, z, z0)
     a /= FF
 
-    return np.array((1.0 + 1.0/FF) / 2.0 * 1/(k * w *FF) * a**abs(l) *
+    return np.array((1.0 + 1.0/FF) / 2.0 * 1/(k * w * FF) * a**abs(l) *
             lag_pl(a**2, p, abs(l)), dtype=np.float128)
 
 
@@ -176,10 +176,10 @@ def phase(r, phi, z, k, w0, p=0, l=0):
     a /= FF
 
     return np.array(exp(-a**2 / 2.0
-               - 1j * k * R * (FF - 1)
+               - 1j * k * R * (FF - 1.0)
                - 1j * k * z
                + 1j * (2 * p + abs(l) + 1) * phi0(z, z0)
-               - 1j * l * phi), dtype=np.complex128)
+               + 1j * l * phi), dtype=np.complex128)
 
 
 def gauss_lag_modes(r, phi, z, k, w0, p=0, l=0):

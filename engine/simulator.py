@@ -8,6 +8,7 @@ Description:
 
 import numpy as np
 
+from skimage.restoration import unwrap_phase
 from skimage.exposure import rescale_intensity
 from joblib import Parallel, delayed
 from scipy.fft import fft2, ifft2, fftshift, ifftshift
@@ -191,12 +192,11 @@ class PytchoSimulator(PytchoSimulatorBase):
         # as the diffraction patterns are computed independently of one another
         def diff(k):
             dx, dy = 0, 0
-
             if mode == 'position':
-                positions = kwargs.get('positions', (10, 20, 30, 40, 50))
+                positions = kwargs.get('positions', range(5, 100))
                 if k in positions:
-                    dx = np.random.randint(low=-2, high=2)
-                    dy = np.random.randint(low=-2, high=2)
+                    dx = np.random.randint(low=-4, high=4)
+                    dy = np.random.randint(low=-4, high=4)
 
             x_k, y_k = self._illu_pos[k]
             i = np.int(np.round((x_k - self._start[0]) / self._shift))
@@ -206,18 +206,25 @@ class PytchoSimulator(PytchoSimulatorBase):
             ext_diff = np.abs(fftshift(fft2(ext_wave)))
 
             if mode == 'poisson':
-                mu = kwargs.get('mean', 10e5)
+                mu = kwargs.get('mean', 1e5)
                 ext_inten = ext_diff ** 2
                 fac = mu / np.sum(ext_inten)
                 ext_inten_noisy = np.random.poisson(ext_inten * fac) / fac
                 ext_diff = np.sqrt(ext_inten_noisy)
 
             if mode == 'random':
+                mu = kwargs.get('mean', 1e6)
+                ext_inten = ext_diff ** 2
+                fac = mu / np.sum(ext_inten)
+                ext_inten_noisy = np.random.poisson(ext_inten * fac) / fac
+                ext_diff = np.sqrt(ext_inten_noisy)
+
                 v = kwargs.get('amount', 0.05)
                 if not 0 <= v <= 1.0:
                     raise ValueError('Mean must be between 0 and 1.0 for random \
                             noise.')
 
+                # bottleneck
                 def f(col):
                     noisy_col = list(map(lambda I: I +
                                          np.random.uniform(low=-v * I, high=v * I),
@@ -409,7 +416,7 @@ class PytchoSimulator(PytchoSimulatorBase):
                     * np.abs(illu_func) * illu_func.conj() \
                     / (np.max(np.abs(illu_func)) * \
                     (np.abs(illu_func)**2 + \
-                    self._alpha * np.max(np.abs(illu_func))))
+                    self._alpha * np.max(np.abs(illu_func))**2))
                 obj_est[y_i:y_i+self._probe, x_i:x_i+self._probe] = ext_wave_upd
 
                 ext_wave_diffs.append(diff_patterns[x_loc * self.rc[0] + y_loc])

@@ -7,18 +7,18 @@ from skimage import img_as_float
 
 plt.style.use("mint")
 
-im1 = img_as_float(imread("./TEM00_obj_ampl.png", as_gray=True))
-im2 = img_as_float(imread("./TEM00_obj_phase.png", as_gray=True))
-im3 = img_as_float(imread("./TEM00_probe_ampl.png", as_gray=True))
-im4 = img_as_float(imread("./TEM00_probe_phase.png", as_gray=True))
-im5 = img_as_float(imread("./TEM21_obj_ampl.png", as_gray=True))
-im6 = img_as_float(imread("./TEM21_obj_phase.png", as_gray=True))
-im7 = img_as_float(imread("./TEM21_probe_ampl.png", as_gray=True))
-im8 = img_as_float(imread("./TEM21_probe_phase.png", as_gray=True))
-im9 = img_as_float(imread("./TEM22_obj_ampl.png", as_gray=True))
-im10 = img_as_float(imread("./TEM22_obj_phase.png", as_gray=True))
-im11 = img_as_float(imread("./TEM22_probe_ampl.png", as_gray=True))
-im12 = img_as_float(imread("./TEM22_probe_phase.png", as_gray=True))
+im1 = img_as_float(imread("./v10_obj_ampl.png", as_gray=True))
+im2 = img_as_float(imread("./v10_obj_phase.png", as_gray=True))
+im3 = img_as_float(imread("./v10_probe_ampl.png", as_gray=True))
+im4 = img_as_float(imread("./v10_probe_phase.png", as_gray=True))
+im5 = img_as_float(imread("./v30_obj_ampl.png", as_gray=True))
+im6 = img_as_float(imread("./v30_obj_phase.png", as_gray=True))
+im7 = img_as_float(imread("./v30_probe_ampl.png", as_gray=True))
+im8 = img_as_float(imread("./v30_probe_phase.png", as_gray=True))
+im9 = img_as_float(imread("./v50_obj_ampl.png", as_gray=True))
+im10 = img_as_float(imread("./v50_obj_phase.png", as_gray=True))
+im11 = img_as_float(imread("./v50_probe_ampl.png", as_gray=True))
+im12 = img_as_float(imread("./v50_probe_phase.png", as_gray=True))
 
 fig = plt.figure(figsize=(16, 16))
 grid = ImageGrid(
@@ -35,17 +35,17 @@ for ax, im in zip(
 ):
     if i % 2 == 0 and i < 6:
         if j == 0:
-            ax.set_title(r"$p,l = 0,0$", size=40, x=1.0)
+            ax.set_title(r"$\nu = 0.1$", size=40, x=1.0)
         if j == 1:
-            ax.set_title(r"$p,l = 2,1$", size=40, x=1.0)
+            ax.set_title(r"$\nu = 0.3$", size=40, x=1.0)
         if j == 2:
-            ax.set_title(r"$p,l = 2,2$", size=40, x=1.0)
+            ax.set_title(r"$\nu = 0.5$", size=40, x=1.0)
         j += 1
 
     ax.set_axis_off()
     ax.imshow(im, cmap="gray")
     i += 1
 
-fig.savefig('repie_grid.png', bbox_inches='tight',
+fig.savefig('random_grid.png', bbox_inches='tight',
                  pad_inches=0, transparent=False)
 plt.show()

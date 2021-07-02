@@ -21,20 +21,22 @@ if __name__ == '__main__':
 
     wavelength = 624 * 1e-9
     k = 2 * np.pi / wavelength
-    w0 = 3 * 1e-6
-    N = 256
+    w0 = 20 * 1e-6
 
-    L = 20 * 1e-6
+    N = 70
+    L = 100 * 1e-6
     x0 = np.linspace(-L/2, L/2, N)
     y0 = np.linspace(-L/2, L/2, N)
     xv, yv = np.meshgrid(x0, y0)
     zz = 1*1e-9
 
-    beam = GLM(w0 = w0, k = k, maxP=8, maxL=8)
+    print((x0[0] - x0[1]) * 1e6 * N)
+
+    beam = GLM(w0=w0, k=k, maxP=8, maxL=8)
     rr = np.sqrt(xv**2 + yv**2)
     phi = np.arctan2(yv, xv)
 
-    cmask = circ_mask(70, (70//2, 70//2), 35, 1.0, inverse=False)
+    cmask = circ_mask(N, (N//2, N//2), N//2, 1.0, inverse=False)
 
     c = np.zeros(beam.shape)
     c[0, 0] = 1.0
@@ -63,9 +65,6 @@ if __name__ == '__main__':
     c[1, 2] = 0.0
     c[2, 2] = 1.0
     u9 = beam.field(rr, phi, zz, c)
-
-    rr[rr < 1*1e-6] = 0
-    print(rr)
 
     fig = plt.figure(figsize=(25, 25))
     grid = ImageGrid(fig,
