@@ -38,7 +38,7 @@ if __name__ == '__main__':
     beam = GHM(w0=w0, k=2 * np.pi / wavelength, maxL=6, maxM=6)
 
     c = np.zeros(beam.shape)
-    c[0, 0] = 1.0
+    c[2, 1] = 1.0
 
     u = beam.field(X, Y, z, c)
 

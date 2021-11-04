@@ -10,10 +10,10 @@ if __name__ == '__main__':
 
 
     golden_mean = (np.sqrt(5) - 1) / 2  # Aesthetic ratio
-    fig_width_pt = 500  # column width
+    fig_width_pt = 400  # column width
     inches_per_pt = 1 / 72.27  # Convert pt to inches
-    fig_width = fig_width_pt * inches_per_pt * golden_mean
-    fig_height = fig_width_pt * inches_per_pt  # height in inches
+    fig_width = fig_width_pt * inches_per_pt
+    fig_height = fig_width_pt * inches_per_pt * golden_mean # height in inches
     figsize = (fig_width, fig_height)
 
     fig, ax = plt.subplots(figsize=figsize)
@@ -31,12 +31,11 @@ if __name__ == '__main__':
     ax.set_xticks([0, np.pi, 2*np.pi, 3*np.pi, 4*np.pi])
     ax.set_xticklabels([r'$0$', r'$\pi$', r'$2\pi$', r'$3\pi$', r'$4\pi$'])
 
-
     ax.set_yticks([0, .25, .5, .75, 1.0])
     ax.set_yticklabels(['', '', r'$0.5$', '', r'$1.0$'])
 
     ax.annotate(r"$\left(2\frac{J_1(x)}{x} \right)^2$",
-            xytext=(2 * np.pi, 0.5), xycoords='data',
+            xytext=(1.5 * np.pi, .65), xycoords='data',
             xy=(0.7 * np.pi, (2 * j1(0.7 * np.pi) / (0.7 * np.pi))**2), textcoords='data',
             arrowprops=dict(arrowstyle="->",
                             lw=1,

@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     ptycho = PytchoSimulator(alpha=0.25, beta=1.0, probe=70,
                              start=(20, 20), shift=5, rc=(30, 30),
-                             iterations=50)
+                             iterations=1)
 
     wavelength = 624 * 1e-9
     k = 2 * np.pi / wavelength
